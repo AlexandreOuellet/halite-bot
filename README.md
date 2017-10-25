@@ -18,8 +18,8 @@ Before submitting a bot, make sure you adhere to our guidelines, or the upload o
 1. 2 things that can be done in parallel :
     1.1 Define and program actions for each ship (Dock(planet), Move(target), Attack(target), Undock)
     1.2 Define the input layer of the neural network and the evaluation function of the state
-2. Create the LSTM Neural Network
-3. Create a game loop that interact with the LSTM Neural Network
+2. Create the design of the Neural Network
+3. Create a game loop that interact with the Neural Network
 4. Figure out learning without supervision
 5. Automate the learning process
 6. Conquer the world!
