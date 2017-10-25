@@ -14,3 +14,12 @@ Before submitting a bot, make sure you adhere to our guidelines, or the upload o
 * Website: You can use the [play page](https://halite.io/play-programming-challenge) in the Halite website to submit your bot.
 * Halite Client: If you a command line experience, you can use the [Halite Client tool](https://halite.io/learn-programming-challenge/halite-cli-and-tools/halite-client-tools) to upload your bot.
 
+## TODO :
+1. 2 things that can be done in parallel :
+    1.1 Define and program actions for each ship (Dock(planet), Move(target), Attack(target), Undock)
+    1.2 Define the input layer of the neural network and the evaluation function of the state
+2. Create the LSTM Neural Network
+3. Create a game loop that interact with the LSTM Neural Network
+4. Figure out learning without supervision
+5. Automate the learning process
+6. Conquer the world!
