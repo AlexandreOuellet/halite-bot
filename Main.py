@@ -15,6 +15,8 @@ import hlt
 # Then let's import the logging module so we can print out information
 import logging
 
+import nnutils
+
 # GAME START
 # Here we define the bot's name as Settler and initialize the game, including communication with the Halite engine.
 game = hlt.Game("Settler")
@@ -23,7 +25,7 @@ logging.info("Starting my Settler bot!")
 
 logging.info(game.map.height)
 logging.info(game.map.width)
-
+nnutils.discretizeTheWorld(game.map)
 
 
 
@@ -32,6 +34,8 @@ while True:
     # TURN START
     # Update the map for the new turn and get the latest version
     game_map = game.update_map()
+
+    
 
     # Here we define the set of commands to be sent to the Halite engine at the end of the turn
     command_queue = []
