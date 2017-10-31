@@ -21,6 +21,13 @@ game = hlt.Game("Settler")
 # Then we print our start message to the logs
 logging.info("Starting my Settler bot!")
 
+logging.info(game.map.height)
+logging.info(game.map.width)
+
+
+
+
+
 while True:
     # TURN START
     # Update the map for the new turn and get the latest version
