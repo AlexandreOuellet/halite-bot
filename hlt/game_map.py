@@ -4,6 +4,7 @@ from . import collision, entity
 class Map:
     """
     Map which houses the current game information/metadata.
+    
     :ivar my_id: Current player id associated with the map
     :ivar width: Map width
     :ivar height: Map height
@@ -68,12 +69,13 @@ class Map:
         for foreign_entity in self._all_ships() + self.all_planets():
             if entity == foreign_entity:
                 continue
-            result.setdefault(entity.calculate_angle_between(foreign_entity), []).append(foreign_entity)
+            result.setdefault(entity.calculate_distance_between(foreign_entity), []).append(foreign_entity)
         return result
 
     def _link(self):
         """
         Updates all the entities with the correct ship and planet objects
+
         :return:
         """
         for celestial_object in self.all_planets() + self._all_ships():
@@ -82,6 +84,7 @@ class Map:
     def _parse(self, map_string):
         """
         Parse the map description from the game.
+
         :param map_string: The string which the Halite engine outputs
         :return: nothing
         """
@@ -96,6 +99,7 @@ class Map:
     def _all_ships(self):
         """
         Helper function to extract all ships from all players
+
         :return: List of ships
         :rtype: List[Ship]
         """
@@ -107,6 +111,7 @@ class Map:
     def _intersects_entity(self, target):
         """
         Check if the specified entity (x, y, r) intersects any planets. Entity is assumed to not be a planet.
+
         :param entity.Entity target: The entity to check intersections with.
         :return: The colliding entity if so, else None.
         :rtype: entity.Entity
@@ -119,16 +124,20 @@ class Map:
                 return celestial_object
         return None
 
-    def obstacles_between(self, ship, target):
+    def obstacles_between(self, ship, target, ignore=()):
         """
         Check whether there is a straight-line path to the given point, without planetary obstacles in between.
+
         :param entity.Ship ship: Source entity
         :param entity.Entity target: Target entity
+        :param entity.Entity ignore: Which entity type to ignore
         :return: The list of obstacles between the ship and target
         :rtype: list[entity.Entity]
         """
         obstacles = []
-        for foreign_entity in self.all_planets() + self._all_ships():
+        entities = ([] if issubclass(entity.Planet, ignore) else self.all_planets()) \
+            + ([] if issubclass(entity.Ship, ignore) else self._all_ships())
+        for foreign_entity in entities:
             if foreign_entity == ship or foreign_entity == target:
                 continue
             if collision.intersect_segment_circle(ship, target, foreign_entity, fudge=ship.radius + 0.1):
@@ -167,6 +176,7 @@ class Player:
     def _parse_single(tokens):
         """
         Parse one user given an input string from the Halite engine.
+
         :param list[str] tokens: The input string as a list of str from the Halite engine.
         :return: The parsed player id, player object, and remaining tokens
         :rtype: (int, Player, list[str])
@@ -181,6 +191,7 @@ class Player:
     def _parse(tokens):
         """
         Parse an entire user input string from the Halite engine for all users.
+
         :param list[str] tokens: The input string as a list of str from the Halite engine.
         :return: The parsed players in the form of player dict, and remaining tokens
         :rtype: (dict, list[str])
