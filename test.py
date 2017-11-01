@@ -53,7 +53,7 @@ with tf.Session() as sess:
     
     
     # Change this to a location on your computer
-    summary_writer = tf.summary.FileWriter('./summary/', graph_def=sess.graph_def)
+    summary_writer = tf.summary.FileWriter('./summary/', graph_def=sess.graph)
 
     # Training cycle
     for iteration in range(training_iteration):
