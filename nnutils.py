@@ -2,43 +2,15 @@ import hlt
 import logging
 
 # the world seems to always be a ratio of 24x16
-tileWidth = 24
-tileHeight = 16
+tileWidth = 384
+tileHeight = 256
 
 def discretizeTheWorld(map):
-    
-    planetRadiuses = [None] * tileWidth * tileHeight
-    # discretizedPlanets = [None] * 24 * 16
-    # discretizedShipPlayer1 = [0] * tileWidth * tileHeight
-    # discretizedShipPlayer2 = [0] * tileWidth * tileHeight
-    # discretizedShipPlayer3 = [0] * tileWidth * tileHeight
-    # discretizedShipPlayer4 = [0] * tileWidth * tileHeight
 
-    planets = map.all_planets()
-    for planet in planets:
-        planetIndex = mapToArrayIndex([planet.x, planet.y])
-         planetRadiuses[planetIndex] = planet.radius
-         
+    planetsModel = discretizePlanets(map)
+    shipsModel = discretizedShips(map)
 
-
-        self.id = planet_id
-        self.x = x
-        self.y = y
-        self.radius = radius
-        self.num_docking_spots = docking_spots
-        self.current_production = current
-        self.remaining_resources = remaining
-        self.health = hp
-        self.owner = owner if bool(int(owned)) else None
-        self._docked_ship_ids = docked_ships
-        self._docked_ships = {}
-
-        logging.info(planet)
-        logging.info(planet.x)
-        logging.info(planet.y)
-        logging.info(planet.radius)
-
-    return 0
+    return planetsModel, shipsModel
 
 def discretizePlanets(map):
     planetsRadius = [None] * tileWidth * tileHeight
@@ -47,54 +19,40 @@ def discretizePlanets(map):
     planetsRemainingResources = [None] * tileWidth * tileHeight
     planetsOwner = [None] * tileWidth * tileHeight
     planetsHealth = [None] * tileWidth * tileHeight
-    planetsDockedShipPlayer1 = [None] * tileWidth * tileHeight
-    planetsDockedShipPlayer2 = [None] * tileWidth * tileHeight
-    planetsDockedShipPlayer3 = [None] * tileWidth * tileHeight
-    planetsDockedShipPlayer4 = [None] * tileWidth * tileHeight
-    # discretizedPlanets = [None] * 24 * 16
-    # discretizedShipPlayer1 = [0] * tileWidth * tileHeight
-    # discretizedShipPlayer2 = [0] * tileWidth * tileHeight
-    # discretizedShipPlayer3 = [0] * tileWidth * tileHeight
-    # discretizedShipPlayer4 = [0] * tileWidth * tileHeight
 
     planets = map.all_planets()
     for planet in planets:
-        tileIndex = mapToArrayIndex([planet.x, planet.y])
+        tileIndex = mapToArrayIndex(planet.x, planet.y)
         
         planetsRadius[tileIndex] = planet.radius
         planetsNumDockingSpots[tileIndex] = planet.num_docking_spots
         planetsCurrentProduction[tileIndex] = planet.current_production
         planetsRemainingResources[tileIndex] = planet.remaining_resources
-        planetsOwner[tileIndex] = planet.owner.id
+        planetsOwner[tileIndex] = planet.owner
         planetsHealth[tileIndex] = planet.health
-        planetsDockedShipPlayer1[tileIndex] = [None] * tileWidth * tileHeight
-        planetsDockedShipPlayer2[tileIndex] = [None] * tileWidth * tileHeight
-        planetsDockedShipPlayer3[tileIndex] = [None] * tileWidth * tileHeight
-        planetsDockedShipPlayer4[tileIndex] = [None] * tileWidth * tileHeight
-         
 
+        # planetsDockedShipPlayer1[tileIndex] = [None] * tileWidth * tileHeight
+        # planetsDockedShipPlayer2[tileIndex] = [None] * tileWidth * tileHeight
+        # planetsDockedShipPlayer3[tileIndex] = [None] * tileWidth * tileHeight
+        # planetsDockedShipPlayer4[tileIndex] = [None] * tileWidth * tileHeight
 
-        self.id = planet_id
-        # self.x = x
-        # self.y = y
-        self.radius = radius
-        self.num_docking_spots = docking_spots
-        self.current_production = current
-        self.remaining_resources = remaining
-        self.health = hp
-        self.owner = owner if bool(int(owned)) else None
-        self._docked_ship_ids = docked_ships
-        self._docked_ships = {}
+    return planetsRadius, planetsNumDockingSpots, planetsCurrentProduction,planetsRemainingResources,planetsOwner,planetsHealth
 
-        logging.info(planet)
-        logging.info(planet.x)
-        logging.info(planet.y)
-        logging.info(planet.radius)
+def discretizedShips(map):
+    # shipsPlayer1Present = [None] * tileWidth * tileHeight
+    shipsPlayerHealth = [None] * 4
+    shipsPlayerDockingStatus = [None] * 4
 
+    for x in range(0, 3):
+        shipsPlayerHealth[x] = [None] * tileWidth * tileHeight
+        shipsPlayerDockingStatus[x] = [None] * tileWidth * tileHeight
+    
+    for player in map.all_players():
+        for ship in player.all_ships():
+            index = mapToArrayIndex(ship.x, ship.y)
+            # shipsPlayer1Present[index] = 1
+            shipsPlayerHealth[player.id][index] = ship.health
+            shipsPlayerDockingStatus[player.id][index] = ship.DockingStatus
 
-
-def mapToArrayIndex(coordinate):
-    return coordinate[0] * 24 + coordinate[1] * 16
-
-if __name__ == '__main__':
-    index = mapToArrayIndex([2000, 300])
+def mapToArrayIndex(x, y):
+    return (int)(x + y * tileHeight)
