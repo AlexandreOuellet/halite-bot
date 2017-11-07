@@ -1,7 +1,7 @@
 """
 Welcome to your first Halite-II bot!
 
-This bot's name is Settler. It's purpose is simple (don't expect it to win complex games :) ):
+This bot's name is Guylaine. It's purpose is simple (don't expect it to win complex games :) ):
 1. Initialize game
 2. If a ship is not docked and there are unowned planets
 2.a. Try to Dock in the planet if close enough
@@ -10,31 +10,37 @@ This bot's name is Settler. It's purpose is simple (don't expect it to win compl
 Note: Please do not place print statements here as they are used to communicate with the Halite engine. If you need
 to log anything use the logging module.
 """
+
+
 # Let's start by importing the Halite Starter Kit so we can interface with the Halite engine
 import hlt
 # Then let's import the logging module so we can print out information
 import logging
+import nnutils
 
 try:
-    import nnutils
     import tensorflow as tf
-
-    import individualShipNN
-    
+    import os
+    #disable warning of tensorflow
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '99'
+    # tf.logging.set_verbosity(tf.logging.ERROR)
 
     # GAME START
-    # Here we define the bot's name as Settler and initialize the game, including communication with the Halite engine.
-    game = hlt.Game("Settler")
+    # Here we define the bot's name as Guylaine and initialize the game, including communication with the Halite engine.
+    game = hlt.Game("Guylaine")
 
     # Then we print our start message to the logs
-    logging.info("Starting my Settler bot!")
+    from nn.dqn import *
 
-    discretizedMap = nnutils.discretizeTheWorld(game.map)
+    stateOfGame = nnutils.Observe(game.map)
 
-    reshapedData = tf.reshape(discretizedMap, [-1])
 
-    logging.info(len(reshapedData))
-    logging.info(discretizedMap)
+    # discretizedMap = nnutils.discretizeTheWorld(game.map)
+
+    # reshapedData = tf.reshape(discretizedMap, [-1])
+
+    # logging.info(len(reshapedData))
+    # logging.info(discretizedMap)
 
     while True:
 
@@ -42,6 +48,10 @@ try:
         # Update the map for the new turn and get the latest version
         
         game_map = game.update_map()
+
+        reward = nnutils.GetReward(game.map)
+        
+        logging.info("Reward:" + str(reward))
 
         # discretizedMap = nnutils.discretizeTheWorld(game.map)
 

@@ -1,15 +1,53 @@
 import hlt
 import logging
+import numpy as np
 
 # the world seems to always be a ratio of 24x16
 tileWidth = 384
 tileHeight = 256
 
-def discretizeTheWorld(map):
+def GetReward(map):
+    myId = map.get_me().id
+    totalShips = [0] * 4
+    totalShipsHealth = [0] * 4
+    productionSpeedPerPlayer = [0] * 4
 
+
+    for planet in map.all_planets():
+        # if planet.owner != None:
+        #     productionSpeedPerPlayer[planet.owner] += planet.
+        
+        for dockedShip in planet.all_docked_ships():
+            productionSpeedPerPlayer[planet.owner.id] += 1
+
+    for player in map.all_players():
+        for ship in player.all_ships():
+            totalShips[player.id] += 1
+            totalShipsHealth[player.id] += ship.health
+
+    totalShipReward = totalShips[myId] / np.sum(totalShips)
+    shipHealthReward = totalShipsHealth[myId] / np.sum(totalShipsHealth)
+
+    productionSpeedReward = np.sum(productionSpeedPerPlayer)
+    if productionSpeedReward != 0:
+        productionSpeedReward = productionSpeedPerPlayer[myId] / productionSpeedReward 
+
+    return np.average([totalShipReward, shipHealthReward, productionSpeedReward])
+
+def _calculateAverage(myId, toCalculate):
+    myNb = toCalculate[myId]
+    totalNb = 0
+
+    for playerId in range(0, 3):
+        if playerId == myId:
+            myNb = toCalculate[playerId]
+
+        totalNb += toCalculate[playerId]
+
+
+def Observe(map):
     planetsModel = discretizePlanets(map)
     shipsModel = discretizedShips(map)
-
     return planetsModel, shipsModel
 
 def discretizePlanets(map):
