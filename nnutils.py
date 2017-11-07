@@ -51,12 +51,12 @@ def Observe(map):
     return planetsModel, shipsModel
 
 def discretizePlanets(map):
-    planetsRadius = [None] * tileWidth * tileHeight
-    planetsNumDockingSpots = [None] * tileWidth * tileHeight
-    planetsCurrentProduction = [None] * tileWidth * tileHeight
-    planetsRemainingResources = [None] * tileWidth * tileHeight
-    planetsOwner = [None] * tileWidth * tileHeight
-    planetsHealth = [None] * tileWidth * tileHeight
+    planetsRadius = [0] * tileWidth * tileHeight
+    planetsNumDockingSpots = [0] * tileWidth * tileHeight
+    planetsCurrentProduction = [0] * tileWidth * tileHeight
+    planetsRemainingResources = [0] * tileWidth * tileHeight
+    planetsOwner = [0] * tileWidth * tileHeight
+    planetsHealth = [0] * tileWidth * tileHeight
 
     planets = map.all_planets()
     for planet in planets:
@@ -66,13 +66,15 @@ def discretizePlanets(map):
         planetsNumDockingSpots[tileIndex] = planet.num_docking_spots
         planetsCurrentProduction[tileIndex] = planet.current_production
         planetsRemainingResources[tileIndex] = planet.remaining_resources
-        planetsOwner[tileIndex] = planet.owner
+        if planet.owner != None:
+            planetsOwner[tileIndex] = planet.owner
         planetsHealth[tileIndex] = planet.health
 
         # planetsDockedShipPlayer1[tileIndex] = [None] * tileWidth * tileHeight
         # planetsDockedShipPlayer2[tileIndex] = [None] * tileWidth * tileHeight
         # planetsDockedShipPlayer3[tileIndex] = [None] * tileWidth * tileHeight
         # planetsDockedShipPlayer4[tileIndex] = [None] * tileWidth * tileHeight
+
 
     return planetsRadius, planetsNumDockingSpots, planetsCurrentProduction,planetsRemainingResources,planetsOwner,planetsHealth
 
@@ -91,6 +93,19 @@ def discretizedShips(map):
             # shipsPlayer1Present[index] = 1
             shipsPlayerHealth[player.id][index] = ship.health
             shipsPlayerDockingStatus[player.id][index] = ship.DockingStatus
+
+    shipsPlayerHealth = _swapArrays(map.get_me().id, 0, shipsPlayerHealth)
+    shipsPlayerDockingStatus = _swapArrays(map.get_me().id, 0, shipsPlayerDockingStatus)
+
+    return shipsPlayerHealth, shipsPlayerDockingStatus
+
+def _swapArrays(index1, index2, array):
+    tmp = array[index1]
+    array[index1] = array[index2]
+    array[index2] = tmp
+
+    return array
+
 
 def mapToArrayIndex(x, y):
     return (int)(x + y * tileHeight)

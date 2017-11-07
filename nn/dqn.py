@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np 
 import random
 from collections import deque 
+import nnutils
 
 # Hyper Parameters:
 FRAME_PER_ACTION = 1
@@ -47,7 +48,7 @@ class DQN:
 
 	def createQNetwork(self):
 		# network weights
-		W_conv1 = self.weight_variable([nn.width,nn.height,4,32])
+		W_conv1 = self.weight_variable([nnutils.tileWidth,nnutils.tileHeight,4,32])
 		b_conv1 = self.bias_variable([32])
 
 		W_conv2 = self.weight_variable([4,4,32,64])
@@ -64,7 +65,7 @@ class DQN:
 
 		# input layer
 
-		stateInput = tf.placeholder("float",[None,84,84,4])
+		stateInput = tf.placeholder("float",[None,nnutils.tileWidth,nnutils.tileHeight,4])
 
 		# hidden layers
 		h_conv1 = tf.nn.relu(self.conv2d(stateInput,W_conv1,4) + b_conv1)
