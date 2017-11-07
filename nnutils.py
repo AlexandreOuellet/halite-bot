@@ -30,7 +30,7 @@ def GetReward(map):
 
     productionSpeedReward = np.sum(productionSpeedPerPlayer)
     if productionSpeedReward != 0:
-        productionSpeedReward = productionSpeedPerPlayer[myId] / productionSpeedReward
+        productionSpeedReward = productionSpeedPerPlayer[myId] / productionSpeedReward 
 
     return np.average([totalShipReward, shipHealthReward, productionSpeedReward])
 
