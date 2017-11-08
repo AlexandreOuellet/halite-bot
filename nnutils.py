@@ -44,11 +44,10 @@ def _calculateAverage(myId, toCalculate):
 
         totalNb += toCalculate[playerId]
 
-
 def Observe(map):
     planetsModel = discretizePlanets(map)
     shipsModel = discretizedShips(map)
-    return planetsModel, shipsModel
+    return [planetsModel, shipsModel]
 
 def discretizePlanets(map):
     planetsRadius = [0] * tileWidth * tileHeight

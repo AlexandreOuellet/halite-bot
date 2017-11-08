@@ -3,6 +3,7 @@ import numpy as np
 import random
 from collections import deque 
 import nnutils
+import logging
 
 # Hyper Parameters:
 FRAME_PER_ACTION = 1
@@ -24,6 +25,7 @@ class DQN:
 		self.timeStep = 0
 		self.epsilon = INITIAL_EPSILON
 		self.actions = actions
+		
 		# init Q network
 		self.stateInput,self.QValue,self.W_conv1,self.b_conv1,self.W_conv2,self.b_conv2,self.W_conv3,self.b_conv3,self.W_fc1,self.b_fc1,self.W_fc2,self.b_fc2 = self.createQNetwork()
 
@@ -37,31 +39,71 @@ class DQN:
 		# saving and loading networks
 		self.saver = tf.train.Saver()
 		self.session = tf.InteractiveSession()
-		self.session.run(tf.initialize_all_variables())
+		self.session.run(tf.global_variables_initializer())
 		checkpoint = tf.train.get_checkpoint_state("saved_networks")
 		if checkpoint and checkpoint.model_checkpoint_path:
 				self.saver.restore(self.session, checkpoint.model_checkpoint_path)
-				print("Successfully loaded:", checkpoint.model_checkpoint_path)
+				logging.info("Successfully loaded:", checkpoint.model_checkpoint_path)
 		else:
-				print("Could not find old network weights")
+				logging.info("Could not find old network weights")
 
 
 	def createQNetwork(self):
+		W_conv1 = tf.truncated_normal([8,8,4,32], stddev = 0.01)
+		W_conv1 = tf.Variable(W_conv1)
+		
+		b_conv1 = tf.constant(0.01, shape = [32])
+		b_conv1 = tf.Variable(b_conv1)
+
+
+		W_conv2 = tf.truncated_normal([4,4,32,64], stddev = 0.01)
+		W_conv2 = tf.Variable(W_conv2)
+		
+		b_conv2 = tf.constant(0.01, shape = [64])
+		b_conv2 = tf.Variable(b_conv2)
+
+		W_conv3 = tf.truncated_normal([3,3,64,64], stddev = 0.01)
+		W_conv3 = tf.Variable(W_conv3)
+
+		b_conv3 = tf.constant(0.01, shape = [64])
+		b_conv3 = tf.Variable(b_conv3)
+
+
+		W_fc1 = tf.truncated_normal([78848,512], stddev = 0.01)
+		W_fc1 = tf.Variable(W_fc1)
+
+		b_fc1 = tf.constant(0.01, shape = [512])
+		b_fc1 = tf.Variable(b_fc1)
+
+		W_fc2 = tf.truncated_normal([512,self.actions], stddev = 0.01)
+		W_fc2 = tf.Variable(W_fc2)
+
+		b_fc2 = tf.constant(0.01, shape = [self.actions])
+		b_fc2 = tf.Variable(b_fc2)
+
+
+
+
+
+
+
+
+
 		# network weights
-		W_conv1 = self.weight_variable([nnutils.tileWidth,nnutils.tileHeight,4,32])
-		b_conv1 = self.bias_variable([32])
+		# W_conv1 = self.weight_variable([nnutils.tileWidth,nnutils.tileHeight,4,32])
+		# b_conv1 = self.bias_variable([32])
 
-		W_conv2 = self.weight_variable([4,4,32,64])
-		b_conv2 = self.bias_variable([64])
+		# W_conv2 = self.weight_variable([4,4,32,64])
+		# b_conv2 = self.bias_variable([64])
 
-		W_conv3 = self.weight_variable([3,3,64,64])
-		b_conv3 = self.bias_variable([64])
+		# W_conv3 = self.weight_variable([3,3,64,64])
+		# b_conv3 = self.bias_variable([64])
 
-		W_fc1 = self.weight_variable([3136,512])
-		b_fc1 = self.bias_variable([512])
+		# W_fc1 = self.weight_variable([3136,512])
+		# b_fc1 = self.bias_variable([512])
 
-		W_fc2 = self.weight_variable([512,self.actions])
-		b_fc2 = self.bias_variable([self.actions])
+		# W_fc2 = self.weight_variable([512,self.actions])
+		# b_fc2 = self.bias_variable([self.actions])
 
 		# input layer
 
@@ -75,8 +117,8 @@ class DQN:
 
 		h_conv3 = tf.nn.relu(self.conv2d(h_conv2,W_conv3,1) + b_conv3)
 		h_conv3_shape = h_conv3.get_shape().as_list()
-		print("dimension:",h_conv3_shape[1]*h_conv3_shape[2]*h_conv3_shape[3])
-		h_conv3_flat = tf.reshape(h_conv3,[-1,3136])
+		# logging.info("dimension:",h_conv3_shape[1]*h_conv3_shape[2]*h_conv3_shape[3])
+		h_conv3_flat = tf.reshape(h_conv3,[-1,78848])
 		h_fc1 = tf.nn.relu(tf.matmul(h_conv3_flat,W_fc1) + b_fc1)
 
 		# Q Value layer
@@ -90,7 +132,7 @@ class DQN:
 	def createTrainingMethod(self):
 		self.actionInput = tf.placeholder("float",[None,self.actions])
 		self.yInput = tf.placeholder("float", [None]) 
-		Q_Action = tf.reduce_sum(tf.mul(self.QValue, self.actionInput), reduction_indices = 1)
+		Q_Action = tf.reduce_sum(tf.multiply(self.QValue, self.actionInput), reduction_indices = 1)
 		self.cost = tf.reduce_mean(tf.square(self.yInput - Q_Action))
 		self.trainStep = tf.train.RMSPropOptimizer(0.00025,0.99,0.0,1e-6).minimize(self.cost)
 
@@ -147,7 +189,7 @@ class DQN:
 		else:
 			state = "train"
 
-		print("TIMESTEP", self.timeStep, "/ STATE", state, \
+		logging.info("TIMESTEP", self.timeStep, "/ STATE", state, \
 		"/ EPSILON", self.epsilon)
 
 		self.currentState = newState

@@ -14,10 +14,12 @@ to log anything use the logging module.
 
 # Let's start by importing the Halite Starter Kit so we can interface with the Halite engine
 import hlt
+import pickle
 # Then let's import the logging module so we can print out information
 import logging
 import nnutils
 import game as g
+import numpy as np
 
 try:
     import tensorflow as tf
@@ -25,36 +27,39 @@ try:
     
     #disable warning of tensorflow
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '99'
-    tf.logging.set_verbosity(tf.logging.ERROR)
-
-    from nn.dqn import DQN
-
-    t = DQN(4)
+    # tf.logging.set_verbosity(tf.logging.ERROR)
 
     # GAME START
     # Here we define the bot's name as Guylaine and initialize the game, including communication with the Halite engine.
     game = hlt.Game("Guylaine")
 
+    from nn.dqn import DQN
 
-    # stateOfGame = nnutils.Observe(game.map)
-    # brain.setInitState(stateOfGame)
+    brain = DQN(len(g.Action))
+
+    stateOfGame = nnutils.Observe(game.map)
+
+    # pickle.dump( stateOfGame, open( "save.pickle", "wb" ) )
+    # stateOfGame = pickle.load( open( "save.pickle", "rb" ) )
+
+    test = np.reshape(stateOfGame[0][0], (nnutils.tileWidth, nnutils.tileHeight))
+    brain.setInitState(test)
 
     while True:
-        
         # TURN START
         # Update the map for the new turn and get the latest version
         game_map = game.update_map()
 
         command_queue = []
 
-        # action = brain.getAction()
-        action = "up"
+        action = brain.getAction()
         action = g.doAction(game_map, None, action)
-
         stateOfGame = nnutils.Observe(game_map)
+
+        test = np.reshape(stateOfGame[0][0], (nnutils.tileWidth, nnutils.tileHeight))
         reward = nnutils.GetReward(game_map)
         
-        # brain.setPerception(stateOfGame, action, reward, false)
+        brain.setPerception(test, action, reward, False)
 
         logging.info(action)
 
