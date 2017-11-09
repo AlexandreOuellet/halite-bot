@@ -3,8 +3,8 @@ import logging
 import numpy as np
 
 # the world seems to always be a ratio of 24x16
-tileWidth = 384
-tileHeight = 256
+tileWidth = 24
+tileHeight = 16
 
 def GetReward(map):
     myId = map.get_me().id
@@ -47,7 +47,7 @@ def _calculateAverage(myId, toCalculate):
 def Observe(map):
     planetsModel = discretizePlanets(map)
     shipsModel = discretizedShips(map)
-    return [planetsModel, shipsModel]
+    return planetsModel, shipsModel
 
 def discretizePlanets(map):
     planetsRadius = [0] * tileWidth * tileHeight
@@ -60,7 +60,7 @@ def discretizePlanets(map):
     planets = map.all_planets()
     for planet in planets:
         tileIndex = mapToArrayIndex(planet.x, planet.y)
-        
+
         planetsRadius[tileIndex] = planet.radius
         planetsNumDockingSpots[tileIndex] = planet.num_docking_spots
         planetsCurrentProduction[tileIndex] = planet.current_production
@@ -107,4 +107,4 @@ def _swapArrays(index1, index2, array):
 
 
 def mapToArrayIndex(x, y):
-    return (int)(x + y * tileHeight)
+    return (int)((x/tileWidth) + tileWidth*(y/tileHeight))

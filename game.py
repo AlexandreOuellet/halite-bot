@@ -1,5 +1,6 @@
 import hlt
 import logging
+import numpy as np
 
 from enum import Enum
 
@@ -15,11 +16,12 @@ class Action(Enum):
     #     return [DOCK, UNDOCK, NORTH, SOUTH, EAST, WEST]
 
 def doAction(map, ship, actions):
-    actionToDo = Action.NOTHING
-    for i in range(0, len(Action)):
-        if actions[i] == 1:
-            actionToDo = i
-            break
+    actionToDo = np.argmax(actions)
+    # actionToDo = Action.NOTHING
+    # for i in range(0, len(Action)):
+    #     if actions[i] == 1:
+    #         actionToDo = i
+    #         break
 
     if actionToDo == Action.DOCK: #dock
         closestPlanet = _getClosestPlanet(map, ship)

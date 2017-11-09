@@ -10,40 +10,45 @@ This bot's name is Guylaine. It's purpose is simple (don't expect it to win comp
 Note: Please do not place print statements here as they are used to communicate with the Halite engine. If you need
 to log anything use the logging module.
 """
-
-
-# Let's start by importing the Halite Starter Kit so we can interface with the Halite engine
-import hlt
-import pickle
-# Then let's import the logging module so we can print out information
-import logging
-import nnutils
-import game as g
-import numpy as np
-
 try:
-    import tensorflow as tf
-    import os
-    
-    #disable warning of tensorflow
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '99'
-    # tf.logging.set_verbosity(tf.logging.ERROR)
+    # Let's start by importing the Halite Starter Kit so we can interface with the Halite engine
+    import hlt
+    import logging
 
     # GAME START
     # Here we define the bot's name as Guylaine and initialize the game, including communication with the Halite engine.
     game = hlt.Game("Guylaine")
 
+    import tensorflow as tf
+    import os
+
+    import pickle
+    # Then let's import the logging module so we can print out information
+    
+    import nnutils
+    import game as g
+    import numpy as np
+    
+    #disable warning of tensorflow
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '99'
+    # tf.logging.set_verbosity(tf.logging.ERROR)
+
+    import nn.Guylaine as Guylaine
     from nn.dqn import DQN
 
-    brain = DQN(len(g.Action))
+    # https://github.com/FitMachineLearning/FitML/blob/master/LunarLander_QL.py
 
-    stateOfGame = nnutils.Observe(game.map)
+    # stateOfGame = pickle.load( open( "save.pickle", "rb" ) )
+    # planetStates = stateOfGame[0]
+    # shipStates = stateOfGame[1]
+
+    planetStates, shipStates = nnutils.Observe(game.map)
 
     # pickle.dump( stateOfGame, open( "save.pickle", "wb" ) )
-    # stateOfGame = pickle.load( open( "save.pickle", "rb" ) )
+    
 
-    test = np.reshape(stateOfGame[0][0], (nnutils.tileWidth, nnutils.tileHeight))
-    brain.setInitState(test)
+    brain = Guylaine.Guylaine(planetStates, shipStates, len(g.Action))
+    brain.setInitState(planetStates, shipStates)
 
     while True:
         # TURN START
@@ -54,12 +59,11 @@ try:
 
         action = brain.getAction()
         action = g.doAction(game_map, None, action)
-        stateOfGame = nnutils.Observe(game_map)
+        planetStates, shipStates = nnutils.Observe(game_map)
 
-        test = np.reshape(stateOfGame[0][0], (nnutils.tileWidth, nnutils.tileHeight))
         reward = nnutils.GetReward(game_map)
         
-        brain.setPerception(test, action, reward, False)
+        brain.setPerception(planetStates, shipStates, action, reward, False)
 
         logging.info(action)
 
