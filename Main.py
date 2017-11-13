@@ -57,9 +57,11 @@ try:
 
         command_queue = []
 
-        action = brain.getAction()
-        action = g.doAction(game_map, None, action)
         planetStates, shipStates = nnutils.Observe(game_map)
+
+        action = brain.getAction(planetStates, shipStates)
+        action = g.doAction(game_map, None, action)
+        
 
         reward = nnutils.GetReward(game_map)
         

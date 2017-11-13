@@ -5,6 +5,7 @@ from collections import deque
 import nnutils
 import logging
 import nn.dqn as dqn
+import nn.qlearning as ql
 
 # Essentially the commander's NN that takes in the layers of the map, and outputs some "intents".
 # CattleNN will then take Guylaine's output, take a ship's current state, and then select an action.
@@ -12,45 +13,60 @@ import nn.dqn as dqn
 # intent, and Guylaine's intent will become clearer to CattleNN
 class Guylaine:
 
-    def __init__(self, planetStates, shipStates, actions):
-        self.actions = actions
-        self.planetsDQN = [None] * len(planetStates)
-        self.shipsDQN = [None] * len(shipStates)
+    def __init__(self, planetStates, shipStates, num_actions):
+        self.actions = np.zeros(num_actions)
+        self.planetsQLearn = [None] * len(planetStates)
+        self.shipsQLearn = [None] * len(shipStates)
 
-        logging.info("creating planets DQN")
-        # for i in range(0, len(planetStates)):
-        for i in range(0, 1):
+        logging.info("creating planets AI")
+        for i in range(0, len(planetStates)):
+        # for i in range(0, 1):
             logging.info("planetStates index:", i)
-            self.planetsDQN[i] = dqn.DQN(actions)
+            self.planetsQLearn[i] = ql.QLearning(len(planetStates[i]), num_actions, "planets_" + str(i))
 
-        logging.info("creating ships DQN")
-        # for i in range(0, len(shipStates)):
-        for i in range(0, 1):
+        logging.info("creating ships AI")
+        for i in range(0, len(shipStates)):
+        # for i in range(0, 1):
             logging.info("shipStates index:", i)
-            self.shipsDQN[i] = dqn.DQN(actions)
+            self.shipsQLearn[i] = ql.QLearning(len(shipStates[i]), num_actions, "ships_" + str(i))
         
     def setPerception(self, planetStates, shipStates, action, reward, terminal):
         # for i in range(0, len(planetStates)):
         for i in range(0, 1):
-            self.planetsDQN[i].setPerception(planetStates[i], action, reward, terminal)
+            self.planetsQLearn[i].setPerception(planetStates[i], action, reward, terminal)
 
         # for i in range(0, len(shipStates)):
         for i in range(0, 1):
-            self.shipsDQN[i].setPerception(shipStates[i], action, reward, terminal)
+            self.shipsQLearn[i].setPerception(shipStates[i], action, reward, terminal)
         return None
 
-    def getAction(self):
-        actions = np.zeros([self.actions, len(self.planetsDQN) + len(self.shipsDQN)])
+    def getAction(self, planetStates, shipStates):
+        actions = None
 
-        # for i in range(0, len(self.planetsDQN)):
-        for i in range(0, 1):
-            np.append(actions, self.planetsDQN[i].getAction(), axis=0)
+        for i in range(0, len(planetStates)):
+        # for i in range(0, 1):
+            logging.debug("planetStates : ", planetStates[i])
+            estimatedActionIndex = int(self.planetsQLearn[i].getAction(planetStates[i]))
+            localActions = np.zeros(len(self.actions))
+            localActions[estimatedActionIndex] = 1
+            if actions == None:
+                actions = localActions
+            else:
+                actions = np.append(actions, localActions)
 
-        # for i in range(0, len(self.shipsDQN)):
-        for i in range(0, 1):
-            np.append(actions, self.shipsDQN[i].getAction(), axis=0)
+        for i in range(0, len(shipStates)):
+        # for i in range(0, 1):
+            logging.debug("shipStates : ", planetStates[i])
+            estimatedActionIndex = int(self.shipsQLearn[i].getAction(shipStates[i]))
+            localActions = np.zeros(len(self.actions))
+            localActions[estimatedActionIndex] = 1
+            if actions == None:
+                actions = localActions
+            else:
+                actions = np.append(actions, localActions, axis=1)
 
         # actions = np.add.reduce(actions, 0)
+        logging.info(actions)
 
         action_index = random.randrange(self.actions)
         actions[action_index] = 1
@@ -58,10 +74,11 @@ class Guylaine:
         return actions
 
     def setInitState(self, planetStates, shipStates):
-        # for i in range(0, len(planetStates)):
-        for i in range(0, 1):
-            self.planetsDQN[i].setInitState(planetStates[i])
+        return
+        # # for i in range(0, len(planetStates)):
+        # for i in range(0, 1):
+        #     self.planetsQLearn[i].setInitState(planetStates[i])
 
-        # for i in range(0, len(shipStates)):
-        for i in range(0, 1):
-            self.shipsDQN[i].setInitState(shipStates[i])
+        # # for i in range(0, len(shipStates)):
+        # for i in range(0, 1):
+        #     self.shipsQLearn[i].setInitState(shipStates[i])

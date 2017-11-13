@@ -8,9 +8,9 @@ tileHeight = 16
 
 def GetReward(map):
     myId = map.get_me().id
-    totalShips = [0] * 4
-    totalShipsHealth = [0] * 4
-    productionSpeedPerPlayer = [0] * 4
+    totalShips = np.zeros(4)
+    totalShipsHealth = np.zeros(4)
+    productionSpeedPerPlayer = np.zeros(4)
 
 
     for planet in map.all_planets():
@@ -50,12 +50,12 @@ def Observe(map):
     return planetsModel, shipsModel
 
 def discretizePlanets(map):
-    planetsRadius = [0] * tileWidth * tileHeight
-    planetsNumDockingSpots = [0] * tileWidth * tileHeight
-    planetsCurrentProduction = [0] * tileWidth * tileHeight
-    planetsRemainingResources = [0] * tileWidth * tileHeight
-    planetsOwner = [0] * tileWidth * tileHeight
-    planetsHealth = [0] * tileWidth * tileHeight
+    planetsRadius = np.zeros(tileWidth * tileHeight)
+    planetsNumDockingSpots = np.zeros(tileWidth * tileHeight)
+    planetsCurrentProduction = np.zeros(tileWidth * tileHeight)
+    planetsRemainingResources = np.zeros(tileWidth * tileHeight)
+    planetsOwner = np.zeros(tileWidth * tileHeight)
+    planetsHealth = np.zeros(tileWidth * tileHeight)
 
     planets = map.all_planets()
     for planet in planets:
@@ -79,19 +79,21 @@ def discretizePlanets(map):
 
 def discretizedShips(map):
     # shipsPlayer1Present = [None] * tileWidth * tileHeight
-    shipsPlayerHealth = [None] * 4
-    shipsPlayerDockingStatus = [None] * 4
+    shipsPlayerHealth = [None] * tileWidth * tileHeight
+    shipsPlayerDockingStatus = [None] * tileWidth * tileHeight
 
     for x in range(0, 3):
-        shipsPlayerHealth[x] = [None] * tileWidth * tileHeight
-        shipsPlayerDockingStatus[x] = [None] * tileWidth * tileHeight
+        shipsPlayerHealth[x] = np.zeros(tileWidth * tileHeight)
+        shipsPlayerDockingStatus[x] = np.zeros(tileWidth * tileHeight)
     
     for player in map.all_players():
         for ship in player.all_ships():
             index = mapToArrayIndex(ship.x, ship.y)
             # shipsPlayer1Present[index] = 1
             shipsPlayerHealth[player.id][index] = ship.health
-            shipsPlayerDockingStatus[player.id][index] = ship.DockingStatus
+
+            # logging.info(ship.DockingStatus.value)
+            # shipsPlayerDockingStatus[player.id][index] = ship.DockingStatus.value
 
     shipsPlayerHealth = _swapArrays(map.get_me().id, 0, shipsPlayerHealth)
     shipsPlayerDockingStatus = _swapArrays(map.get_me().id, 0, shipsPlayerDockingStatus)
