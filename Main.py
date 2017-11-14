@@ -60,16 +60,19 @@ try:
         planetStates, shipStates = nnutils.Observe(game_map)
 
         actionIndex = brain.getAction(planetStates, shipStates)
-        actions = np.zeros(len(g.Action)
+        actionIndex = 3
+        actions = np.zeros(len(g.Action))
         actions[actionIndex] = 1
-        g.doAction(game_map, None, actions)
+
+        for ship in game.map.get_me().all_ships():
+            g.doAction(game_map, ship, actions)
         
 
         reward = nnutils.GetReward(game_map)
         
         brain.setPerception(planetStates, shipStates, actions, reward, False)
 
-        logging.info(action)
+        logging.info(actions)
 
         game.send_command_queue(command_queue)
         

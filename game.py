@@ -17,24 +17,25 @@ class Action(Enum):
 
 def doAction(map, ship, actions):
     actionToDo = np.argmax(actions)
+    logging.debug("ActionToDo: %d", actionToDo)
     # actionToDo = Action.NOTHING
     # for i in range(0, len(Action)):
     #     if actions[i] == 1:
     #         actionToDo = i
     #         break
 
-    if actionToDo == Action.DOCK: #dock
+    if actionToDo == Action.DOCK.value: #dock
         closestPlanet = _getClosestPlanet(map, ship)
         return ship.dock(closestPlanet)
-    if actionToDo == Action.UNDOCK:
+    if actionToDo == Action.UNDOCK.value:
         return ship.undock()
-    if actionToDo == Action.NORTH:
+    if actionToDo == Action.NORTH.value:
         return ship.thrust(0, 7)
-    if actionToDo == Action.EAST:
+    if actionToDo == Action.EAST.value:
         return ship.thrust(90, 7)
-    if actionToDo == Action.SOUTH:
+    if actionToDo == Action.SOUTH.value:
         return ship.thrust(180, 7)
-    if actionToDo == Action.WEST:
+    if actionToDo == Action.WEST.value:
         return ship.thrust(270, 7)
 
 def _getClosestPlanet(map, ship):
