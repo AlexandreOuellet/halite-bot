@@ -44,7 +44,7 @@ try:
 
     planetStates, shipStates = nnutils.Observe(game.map)
 
-    # pickle.dump( stateOfGame, open( "save.pickle", "wb" ) )
+    # pickle.dump( game, open( "game.pickle", "wb" ) )
     
 
     brain = Guylaine.Guylaine(planetStates, shipStates, len(g.Action))
@@ -59,13 +59,15 @@ try:
 
         planetStates, shipStates = nnutils.Observe(game_map)
 
-        action = brain.getAction(planetStates, shipStates)
-        action = g.doAction(game_map, None, action)
+        actionIndex = brain.getAction(planetStates, shipStates)
+        actions = np.zeros(len(g.Action)
+        actions[actionIndex] = 1
+        g.doAction(game_map, None, actions)
         
 
         reward = nnutils.GetReward(game_map)
         
-        brain.setPerception(planetStates, shipStates, action, reward, False)
+        brain.setPerception(planetStates, shipStates, actions, reward, False)
 
         logging.info(action)
 

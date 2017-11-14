@@ -17,6 +17,9 @@ num_games_to_play = 50
 class QLearning:
 
     def __init__(self, num_inputs, num_actions, weight_filename):
+        self.gameX = np.zeros(shape=(1,num_inputs+num_actions))
+        self.gameY = np.zeros(shape=(1,1))
+
         self.weight_filename = weight_filename
         self.num_actions = num_actions
         self.num_inputs = num_inputs
@@ -70,15 +73,25 @@ class QLearning:
 
     #This function predicts the reward that will result from taking an "action" at a state "qstate"
     def predictTotalRewards(self, qstate, action):
-        potentialActions = np.zeros(shape=(self.num_actions))
-        qs_a = np.concatenate((qstate, potentialActions), axis=0)
-        predX = np.zeros(shape=(1, self.num_actions + self.num_inputs))
-        predX[0] = qs_a
+        # potentialActions = np.zeros(shape=(self.num_actions))
+        # logging.info("potentialActions : %s", potentialActions)
+        # qs_a = np.concatenate((qstate, potentialActions), axis=0)
+        # logging.info("qs_a : %s", qs_a)
+        # predX = np.zeros(shape=(1, self.num_actions + self.num_inputs))
+        # logging.debug("predX : %s", predX)
+        
+        # predX[0] = qs_a
 
-        #print("trying to predict reward at qs_a", predX[0])
-        pred = self.model.predict(predX[0].reshape(1,predX.shape[1]))
-        remembered_total_reward = pred[0][0]
-        return remembered_total_reward
+        # #print("trying to predict reward at qs_a", predX[0])
+        # pred = self.model.predict(predX[0].reshape(1,predX.shape[1]))
+        # remembered_total_reward = pred[0][0]
+        return 0
+
+    def setPerception(self, state, action, reward, terminal):
+        # self.gameX = np.vstack((self.gameX,qs_a))
+        # self.gameY = np.vstack((self.gameY,np.array([reward])))
+
+        return None
 
     def saveWeight(self):
         #Save model

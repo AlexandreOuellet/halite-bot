@@ -79,8 +79,8 @@ def discretizePlanets(map):
 
 def discretizedShips(map):
     # shipsPlayer1Present = [None] * tileWidth * tileHeight
-    shipsPlayerHealth = [None] * tileWidth * tileHeight
-    shipsPlayerDockingStatus = [None] * tileWidth * tileHeight
+    shipsPlayerHealth = [0] * tileWidth * tileHeight
+    shipsPlayerDockingStatus = [0] * tileWidth * tileHeight
 
     for x in range(0, 3):
         shipsPlayerHealth[x] = np.zeros(tileWidth * tileHeight)

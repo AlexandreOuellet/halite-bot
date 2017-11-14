@@ -21,57 +21,55 @@ class Guylaine:
         logging.info("creating planets AI")
         for i in range(0, len(planetStates)):
         # for i in range(0, 1):
-            logging.info("planetStates index:", i)
             self.planetsQLearn[i] = ql.QLearning(len(planetStates[i]), num_actions, "planets_" + str(i))
 
         logging.info("creating ships AI")
         for i in range(0, len(shipStates)):
         # for i in range(0, 1):
-            logging.info("shipStates index:", i)
             self.shipsQLearn[i] = ql.QLearning(len(shipStates[i]), num_actions, "ships_" + str(i))
         
-    def setPerception(self, planetStates, shipStates, action, reward, terminal):
+    def setPerception(self, planetStates, shipStates, actions, reward, terminal):
         # for i in range(0, len(planetStates)):
         for i in range(0, 1):
-            self.planetsQLearn[i].setPerception(planetStates[i], action, reward, terminal)
+            self.planetsQLearn[i].setPerception(planetStates[i], actions, reward, terminal)
 
         # for i in range(0, len(shipStates)):
         for i in range(0, 1):
-            self.shipsQLearn[i].setPerception(shipStates[i], action, reward, terminal)
+            self.shipsQLearn[i].setPerception(shipStates[i], actions, reward, terminal)
         return None
 
     def getAction(self, planetStates, shipStates):
-        actions = None
+        actions = []
 
         for i in range(0, len(planetStates)):
         # for i in range(0, 1):
-            logging.debug("planetStates : ", planetStates[i])
+            logging.debug("planetStates[%d] : %s", i, planetStates[i])
             estimatedActionIndex = int(self.planetsQLearn[i].getAction(planetStates[i]))
             localActions = np.zeros(len(self.actions))
             localActions[estimatedActionIndex] = 1
-            if actions == None:
-                actions = localActions
-            else:
-                actions = np.append(actions, localActions)
+            # if actions == None:
+            #     actions = localActions
+            # else:
+            actions = np.append(actions, localActions)
 
         for i in range(0, len(shipStates)):
         # for i in range(0, 1):
-            logging.debug("shipStates : ", planetStates[i])
+            logging.debug("shipStates[%d] : %s", i, shipStates[i])
             estimatedActionIndex = int(self.shipsQLearn[i].getAction(shipStates[i]))
             localActions = np.zeros(len(self.actions))
             localActions[estimatedActionIndex] = 1
-            if actions == None:
-                actions = localActions
-            else:
-                actions = np.append(actions, localActions, axis=1)
+            # if actions == None:
+            #     actions = localActions
+            # else:
+            actions = np.append(actions, localActions, axis=0)
 
-        # actions = np.add.reduce(actions, 0)
+        np.reshape(actions, (-1, len(self.actions)))
+        actions = np.add.reduce(actions, 0)
         logging.info(actions)
 
-        action_index = random.randrange(self.actions)
-        actions[action_index] = 1
+        action_index = np.argmax(actions)
 
-        return actions
+        return action_index
 
     def setInitState(self, planetStates, shipStates):
         return
