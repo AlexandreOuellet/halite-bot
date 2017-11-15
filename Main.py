@@ -48,6 +48,7 @@ try:
     
 
     brain = Guylaine.Guylaine(planetStates, shipStates, len(g.Action))
+    brain.load()
     brain.setInitState(planetStates, shipStates)
 
     while True:
@@ -57,6 +58,8 @@ try:
 
         command_queue = []
 
+        oldPlanetStates = planetStates
+        oldShipStates = shipStates
         planetStates, shipStates = nnutils.Observe(game_map)
 
         actionIndex = brain.getAction(planetStates, shipStates)
@@ -65,14 +68,14 @@ try:
         actions[actionIndex] = 1
 
         for ship in game.map.get_me().all_ships():
-            g.doAction(game_map, ship, actions)
+            command = g.doAction(game_map, ship, actions)
+            logging.debug(command)
+            command_queue.append(command)
         
 
         reward = nnutils.GetReward(game_map)
         
-        brain.setPerception(planetStates, shipStates, actions, reward, False)
-
-        logging.info(actions)
+        brain.setPerception(oldPlanetStates, oldShipStates, actions, reward, planetStates, shipStates, False)
 
         game.send_command_queue(command_queue)
         
@@ -126,6 +129,6 @@ try:
         # TURN END
     # GAME END
 except Exception as e:
-
+    brain.save()
     # traceback.print_exc()
     logging.exception(str(e))

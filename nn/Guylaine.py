@@ -6,6 +6,7 @@ import nnutils
 import logging
 import nn.dqn as dqn
 import nn.qlearning as ql
+from nn import dqnAgent
 
 # Essentially the commander's NN that takes in the layers of the map, and outputs some "intents".
 # CattleNN will then take Guylaine's output, take a ship's current state, and then select an action.
@@ -18,33 +19,29 @@ class Guylaine:
         self.planetsQLearn = [None] * len(planetStates)
         self.shipsQLearn = [None] * len(shipStates)
 
-        logging.info("creating planets AI")
         for i in range(0, len(planetStates)):
         # for i in range(0, 1):
-            self.planetsQLearn[i] = ql.QLearning(len(planetStates[i]), num_actions, "planets_" + str(i))
+            self.planetsQLearn[i] = dqnAgent.DQNAgent(len(planetStates[i]), num_actions, "planets_" + str(i))
 
-        logging.info("creating ships AI")
         for i in range(0, len(shipStates)):
         # for i in range(0, 1):
-            self.shipsQLearn[i] = ql.QLearning(len(shipStates[i]), num_actions, "ships_" + str(i))
+            self.shipsQLearn[i] = dqnAgent.DQNAgent(len(shipStates[i]), num_actions, "ships_" + str(i))
         
-    def setPerception(self, planetStates, shipStates, actions, reward, terminal):
-        # for i in range(0, len(planetStates)):
-        for i in range(0, 1):
-            self.planetsQLearn[i].setPerception(planetStates[i], actions, reward, terminal)
+    def setPerception(self, planetStates, shipStates, actions, reward, nextPlanetStates, nextShipStates, terminal):
+        for i in range(0, len(nextPlanetStates)):
+        # for i in range(0, 1):
+            self.planetsQLearn[i].remember(planetStates[i], actions, reward, nextPlanetStates[i], terminal)
 
-        # for i in range(0, len(shipStates)):
-        for i in range(0, 1):
-            self.shipsQLearn[i].setPerception(shipStates[i], actions, reward, terminal)
-        return None
+        for i in range(0, len(nextShipStates)):
+        # for i in range(0, 1):
+            self.shipsQLearn[i].remember(shipStates[i], actions, reward, nextShipStates[i], terminal)
 
     def getAction(self, planetStates, shipStates):
         actions = []
 
         for i in range(0, len(planetStates)):
         # for i in range(0, 1):
-            logging.debug("planetStates[%d] : %s", i, planetStates[i])
-            estimatedActionIndex = int(self.planetsQLearn[i].getAction(planetStates[i]))
+            estimatedActionIndex = int(self.planetsQLearn[i].act(planetStates[i]))
             localActions = np.zeros(len(self.actions))
             localActions[estimatedActionIndex] = 1
             # if actions == None:
@@ -54,8 +51,7 @@ class Guylaine:
 
         for i in range(0, len(shipStates)):
         # for i in range(0, 1):
-            logging.debug("shipStates[%d] : %s", i, shipStates[i])
-            estimatedActionIndex = int(self.shipsQLearn[i].getAction(shipStates[i]))
+            estimatedActionIndex = int(self.shipsQLearn[i].act(shipStates[i]))
             localActions = np.zeros(len(self.actions))
             localActions[estimatedActionIndex] = 1
             # if actions == None:
@@ -65,7 +61,6 @@ class Guylaine:
 
         np.reshape(actions, (-1, len(self.actions)))
         actions = np.add.reduce(actions, 0)
-        logging.info(actions)
 
         action_index = np.argmax(actions)
 
@@ -80,3 +75,15 @@ class Guylaine:
         # # for i in range(0, len(shipStates)):
         # for i in range(0, 1):
         #     self.shipsQLearn[i].setInitState(shipStates[i])
+        return None
+    def save(self):
+        for agent in self.planetsQLearn:
+            agent.save()
+        for agent in self.shipsQLearn:
+            agent.save()
+
+    def load(self):
+        for agent in self.planetsQLearn:
+            agent.load()
+        for agent in self.shipsQLearn:
+            agent.load()
