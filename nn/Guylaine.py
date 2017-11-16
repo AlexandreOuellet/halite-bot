@@ -59,8 +59,8 @@ class Guylaine:
             # else:
             actions = np.append(actions, localActions, axis=0)
 
-        np.reshape(actions, (-1, len(self.actions)))
-        actions = np.add.reduce(actions, 0)
+        reshapedActions = np.reshape(actions, (-1, len(self.actions)))
+        actions = np.add.reduce(reshapedActions, 0)
 
         action_index = np.argmax(actions)
 
@@ -87,3 +87,10 @@ class Guylaine:
             agent.load()
         for agent in self.shipsQLearn:
             agent.load()
+
+    def replay(self, batch_size):
+        logging.debug("Replaying match")
+        for agent in self.planetsQLearn:
+            agent.replay(batch_size)
+        for agent in self.shipsQLearn:
+            agent.replay(batch_size)

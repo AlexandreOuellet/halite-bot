@@ -1,9 +1,10 @@
 import random
 import numpy as np
 from collections import deque
-from keras.models import Sequential
-from keras.layers import Dense
+from keras.models import Sequential, Model
+from keras.layers import Dense, Input
 from keras.optimizers import Adam
+import logging
 
 EPISODES = 1000
 
@@ -23,10 +24,13 @@ class DQNAgent:
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
-        model = Sequential()
-        model.add(Dense(24, input_dim=self.state_size, activation='relu'))
-        model.add(Dense(24, activation='relu'))
-        model.add(Dense(self.action_size, activation='linear'))
+        logging.debug("state_size : %s", self.state_size)
+        inputs = Input(shape=(self.state_size,))
+        x = Dense(24, input_dim=self.state_size, activation='relu')(inputs)
+        x = Dense(24, activation='relu')(x)
+        predictions = Dense(self.action_size, activation='linear')(x)
+
+        model = Model(inputs=inputs, outputs=predictions)
         model.compile(loss='mse',
                       optimizer=Adam(lr=self.learning_rate))
         return model
@@ -41,12 +45,27 @@ class DQNAgent:
         return np.argmax(act_values[0])  # returns action
 
     def replay(self, batch_size):
-        minibatch = random.sample(self.memory, batch_size)
+        state = []
+        minBatchSize = batch_size
+        if (len(self.memory) < batch_size):
+            minBatchSize = len(self.memory)
+
+        minibatch = random.sample(self.memory, minBatchSize)
+        logging.debug("minibatch[0] : %s", minibatch[0])
         for state, action, reward, next_state, done in minibatch:
             target = reward
+            # for i in range(0, self.action_size):
+            #     state = np.append(state, next_state, axis=1)
+
+            logging.debug("next_state: %s", next_state)
+
+            test = np.reshape(next_state, (1, len(next_state)))
+            test = [next_state]
+            logging.debug("test : %s", test)
+
             if not done:
                 target = (reward + self.gamma *
-                          np.amax(self.model.predict(next_state)[0]))
+                          np.amax(self.model.predict(test)[0]))
             target_f = self.model.predict(state)
             target_f[0][action] = target
             self.model.fit(state, target_f, epochs=1, verbose=0)
