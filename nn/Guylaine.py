@@ -14,18 +14,19 @@ from nn import dqnAgent
 # intent, and Guylaine's intent will become clearer to CattleNN
 class Guylaine:
 
-    def __init__(self, planetStates, shipStates, num_actions):
+    def __init__(self, planetStates, shipStates, num_actions, name):
+        self.name = name
         self.actions = np.zeros(num_actions)
         self.planetsQLearn = [None] * len(planetStates)
         self.shipsQLearn = [None] * len(shipStates)
 
         for i in range(0, len(planetStates)):
         # for i in range(0, 1):
-            self.planetsQLearn[i] = dqnAgent.DQNAgent(len(planetStates[i]), num_actions, "planets_" + str(i))
+            self.planetsQLearn[i] = dqnAgent.DQNAgent(len(planetStates[i]), num_actions, self.name + "planets_" + str(i))
 
         for i in range(0, len(shipStates)):
         # for i in range(0, 1):
-            self.shipsQLearn[i] = dqnAgent.DQNAgent(len(shipStates[i]), num_actions, "ships_" + str(i))
+            self.shipsQLearn[i] = dqnAgent.DQNAgent(len(shipStates[i]), num_actions, self.name + "ships_" + str(i))
         
     def setPerception(self, planetStates, shipStates, actions, reward, nextPlanetStates, nextShipStates, terminal):
         for i in range(0, len(nextPlanetStates)):
@@ -92,5 +93,5 @@ class Guylaine:
         logging.debug("Replaying match")
         for agent in self.planetsQLearn:
             agent.replay(batch_size)
-        for agent in self.shipsQLearn:
-            agent.replay(batch_size)
+        # for agent in self.shipsQLearn:
+        #     agent.replay(batch_size)

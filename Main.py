@@ -11,13 +11,14 @@ Note: Please do not place print statements here as they are used to communicate 
 to log anything use the logging module.
 """
 try:
+    import sys
     # Let's start by importing the Halite Starter Kit so we can interface with the Halite engine
     import hlt
     import logging
 
     # GAME START
     # Here we define the bot's name as Guylaine and initialize the game, including communication with the Halite engine.
-    game = hlt.Game("Guylaine")
+    game = hlt.Game("Guylaine" + sys.argv[1])
 
     import tensorflow as tf
     import os
@@ -38,8 +39,8 @@ try:
 
     planetStates, shipStates = nnutils.Observe(game.map)
 
-    brain = Guylaine.Guylaine(planetStates, shipStates, len(g.Action))
-    brain.load()
+    brain = Guylaine.Guylaine(planetStates, shipStates, len(g.Action), sys.argv[1])
+    # brain.load()
     brain.setInitState(planetStates, shipStates)
 
     while True:
@@ -49,8 +50,8 @@ try:
 
         command_queue = []
 
-        oldPlanetStates = planetStates
-        oldShipStates = shipStates
+        oldPlanetStates = np.copy(planetStates)
+        oldShipStates = np.copy(shipStates)
         planetStates, shipStates = nnutils.Observe(game_map)
 
         actionIndex = brain.getAction(planetStates, shipStates)
@@ -73,8 +74,8 @@ try:
 except Exception as e:
     try:
         logging.exception(str(e))
-        brain.replay(25)
         brain.save()
+        brain.replay(25)
     except Exception as f:
         logging.exception(str(f))
     # traceback.print_exc()
