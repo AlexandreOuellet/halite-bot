@@ -35,13 +35,18 @@ try:
     # tf.logging.set_verbosity(tf.logging.ERROR)
 
     import nn.Guylaine as Guylaine
+    import nn.GuylaineV2 as GuylaineV2
     from nn.dqn import DQN
 
-    planetStates, shipStates = nnutils.Observe(game.map)
+    states = nnutils.Observe(game.map)
 
-    brain = Guylaine.Guylaine(planetStates, shipStates, len(g.Action), sys.argv[1])
+    guylaine = GuylaineV2.GuylaineV2(nnutils.tileWidth * nnutils.tileHeight, len(states), 100, 'GuylaineV2')
+    # guylaine.setInitState(states, len(g.Action))
+    act_value = guylaine.act(states)
+
+    # brain = Guylaine.Guylaine(planetStates, shipStates, len(g.Action), sys.argv[1])
     # brain.load()
-    brain.setInitState(planetStates, shipStates)
+    # brain.setInitState(planetStates, shipStates)
 
     while True:
         # TURN START

@@ -15,7 +15,7 @@ from nn import dqnAgent
 class Guylaine:
 
     def __init__(self, planetStates, shipStates, num_actions, name):
-        self.name = name
+        self.name = './data/' + name
         self.actions = np.zeros(num_actions)
         self.planetsQLearn = [None] * len(planetStates)
         self.shipsQLearn = [None] * len(shipStates)

@@ -12,10 +12,12 @@ EPISODES = 1000
 action_size = 10
 
 
-class ConvAgent:
-    def __init__(self, state_size, ship_input_size, output_size, name):
+class GuylaineV2:
+    def __init__(self, state_size, state_channels, output_size, name):
         self.name = name
         self.state_size = state_size
+        self.state_channels = state_channels
+        self.output_size = output_size
         self.memory = deque(maxlen=2000)
         self.gamma = 0.95    # discount rate
         self.epsilon = 1.0  # exploration rate
@@ -26,14 +28,11 @@ class ConvAgent:
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
-        inputs = Input(shape=(self.state_size,),name='states_Input')
+        inputs = Input(shape=(self.state_size,self.state_channels),name='states_Input')
         x = Dense(24, input_dim=self.state_size, activation='relu')(inputs)
         # x = Dense(24, activation='relu')(x)
 
-        predictions = Dense(self.action_size, activation='linear')(x)
-
-        auxiliary_input = Input(shape=(5,), name='aux_input')
-
+        predictions = Dense(self.output_size, activation='linear')(x)
 
         model = Model(inputs=inputs, outputs=predictions)
         model.compile(loss='mse',
@@ -44,10 +43,10 @@ class ConvAgent:
         self.memory.append((state, action, reward, next_state, done))
 
     def act(self, state):
-        if np.random.rand() <= self.epsilon:
-            return random.randrange(self.action_size)
+        # if np.random.rand() <= self.epsilon:
+        #     return random.randrange(self.output_size)
         act_values = self.model.predict(state)
-        return np.argmax(act_values[0])  # returns action
+        return act_values
 
     def replay(self, batch_size):
         minBatchSize = batch_size

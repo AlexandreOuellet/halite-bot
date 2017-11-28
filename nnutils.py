@@ -3,8 +3,8 @@ import logging
 import numpy as np
 
 # the world seems to always be a ratio of 24x16
-tileWidth = 24
-tileHeight = 16
+tileWidth = 320
+tileHeight = 240
 
 def GetReward(map):
     myId = map.get_me().id
@@ -12,10 +12,7 @@ def GetReward(map):
     totalShipsHealth = np.zeros(4)
     productionSpeedPerPlayer = np.zeros(4)
 
-
     for planet in map.all_planets():
-        # if planet.owner != None:
-        #     productionSpeedPerPlayer[planet.owner] += planet.
         
         for dockedShip in planet.all_docked_ships():
             productionSpeedPerPlayer[planet.owner.id] += 1
@@ -45,9 +42,29 @@ def _calculateAverage(myId, toCalculate):
         totalNb += toCalculate[playerId]
 
 def Observe(map):
-    planetsModel = discretizePlanets(map)
-    shipsModel = discretizedShips(map)
-    return planetsModel, shipsModel
+    
+    planetsStates = discretizePlanets(map)
+    shipsStates = discretizedShips(map)
+
+    nbStates = len(planetsStates)
+    for i in range(0, len(shipsStates)):
+        nbStates += len(shipsStates[i])
+
+    states = np.ndarray(shape=(nbStates, tileWidth * tileHeight))
+
+    # logging.debug(states)
+
+    logging.debug(states.shape);
+    logging.debug(planetsStates)
+
+    for i in range(0, len(planetsStates)):
+        states = np.concatenate((states, planetsStates[i]), axis=0)
+    
+    for p in range(0, len(shipsStates)):
+        for i in range(0, len(shipsStates[p])):
+            states = np.concatenate((states, shipsStates[p][i]), axis=0)
+    
+    return states
 
 def discretizePlanets(map):
     planetsRadius = np.zeros(tileWidth * tileHeight)
@@ -79,21 +96,19 @@ def discretizePlanets(map):
 
 def discretizedShips(map):
     # shipsPlayer1Present = [None] * tileWidth * tileHeight
-    shipsPlayerHealth = [0] * tileWidth * tileHeight
-    shipsPlayerDockingStatus = [0] * tileWidth * tileHeight
+    shipsPlayerHealth = np.ndarray(shape=(4, tileWidth * tileHeight))
+    shipsPlayerDockingStatus = np.ndarray(shape=(4, tileWidth * tileHeight))
 
-    for x in range(0, 3):
-        shipsPlayerHealth[x] = np.zeros(tileWidth * tileHeight)
-        shipsPlayerDockingStatus[x] = np.zeros(tileWidth * tileHeight)
+    # for x in range(0, 3):
+        # shipsPlayerHealth[x] = np.zeros(tileWidth * tileHeight)
+        # shipsPlayerDockingStatus[x] = np.zeros(tileWidth * tileHeight)
     
     for player in map.all_players():
         for ship in player.all_ships():
             index = mapToArrayIndex(ship.x, ship.y)
             # shipsPlayer1Present[index] = 1
             shipsPlayerHealth[player.id][index] = ship.health
-
-            # logging.info(ship.DockingStatus.value)
-            # shipsPlayerDockingStatus[player.id][index] = ship.DockingStatus.value
+            shipsPlayerDockingStatus[player.id][index] = int(ship.docking_status.value)
 
     shipsPlayerHealth = _swapArrays(map.get_me().id, 0, shipsPlayerHealth)
     shipsPlayerDockingStatus = _swapArrays(map.get_me().id, 0, shipsPlayerDockingStatus)
