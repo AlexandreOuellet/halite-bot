@@ -40,7 +40,7 @@ try:
 
     states = nnutils.Observe(game.map)
 
-    guylaine = GuylaineV2.GuylaineV2(nnutils.tileWidth * nnutils.tileHeight, len(states), 100, 'GuylaineV2')
+    guylaine = GuylaineV2.GuylaineV2(nnutils.tileWidth, nnutils.tileHeight, len(states), 100, 'GuylaineV2')
     # guylaine.setInitState(states, len(g.Action))
     act_value = guylaine.act(states)
 

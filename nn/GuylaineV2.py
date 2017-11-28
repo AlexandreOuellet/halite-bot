@@ -2,7 +2,7 @@ import random
 import numpy as np
 from collections import deque
 from keras.models import Sequential, Model
-from keras.layers import Dense, Input
+from keras.layers import Dense, Input, Convolution2D, Flatten, Activation, MaxPooling2D
 from keras.optimizers import Adam
 from keras.utils import to_categorical
 import logging
@@ -13,9 +13,10 @@ action_size = 10
 
 
 class GuylaineV2:
-    def __init__(self, state_size, state_channels, output_size, name):
+    def __init__(self, state_width, state_height, state_channels, output_size, name):
         self.name = name
-        self.state_size = state_size
+        self.state_width = state_width
+        self.state_height = state_height
         self.state_channels = state_channels
         self.output_size = output_size
         self.memory = deque(maxlen=2000)
@@ -28,13 +29,34 @@ class GuylaineV2:
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
-        inputs = Input(shape=(self.state_size,self.state_channels),name='states_Input')
-        x = Dense(24, input_dim=self.state_size, activation='relu')(inputs)
+        # inputs = Input(shape=(self.state_size,self.state_channels),name='states_input')
+        # x = Dense(24, input_dim=self.state_size, activation='relu')(inputs)
         # x = Dense(24, activation='relu')(x)
 
-        predictions = Dense(self.output_size, activation='linear')(x)
+        # predictions = Dense(self.output_size, activation='linear')(x)
+        model = Sequential()
+        
+        model.add(Convolution2D(32, (3, 3), data_format="channels_last",
+            input_shape=(self.state_channels, self.state_width, self.state_height), name='conv1'))
+        model.add(Activation('relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2), name='maxpool1', data_format="channels_last"))
 
-        model = Model(inputs=inputs, outputs=predictions)
+        model.add(Convolution2D(32, (3, 3), name='conv2', data_format="channels_last"))
+        model.add(Activation('relu'))
+        model.add(MaxPooling2D(pool_size=(2, 2), name='maxpool2', data_format="channels_last"))
+
+        # model.add(Convolution2D(64, (3, 3), name='conv3', data_format="channels_last"))
+        # model.add(Activation('relu'))
+        # model.add(MaxPooling2D(pool_size=(2, 2), name='maxpool3', data_format="channels_last"))
+
+        model.add(Flatten())
+
+        model.add(Dense(512, name='dense1'))
+        model.add(Activation('relu'))
+
+        model.add(Dense(self.output_size, name='output'))
+        model.add(Activation('sigmoid'))
+
         model.compile(loss='mse',
                       optimizer=Adam(lr=self.learning_rate))
         return model
