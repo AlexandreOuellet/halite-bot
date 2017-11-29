@@ -34,16 +34,22 @@ try:
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '99'
     # tf.logging.set_verbosity(tf.logging.ERROR)
 
-    import nn.Guylaine as Guylaine
     import nn.GuylaineV2 as GuylaineV2
-    from nn.dqn import DQN
+    import nn.Cattle as Cattle
 
-    states = nnutils.Observe(game.map)
+    state = nnutils.Observe(game.map)
 
-    guylaine = GuylaineV2.GuylaineV2(nnutils.tileWidth, nnutils.tileHeight, len(states), 100, 'GuylaineV2')
-    # guylaine.setInitState(states, len(g.Action))
-    act_value = guylaine.act(states)
+    ship_input_size = 3
+    guylaine_output_size = 100
+    cattle_output_size = 6 # dock/undock/north/south/east/west
+    guylaine = GuylaineV2.GuylaineV2(nnutils.tileWidth, nnutils.tileHeight, len(state), guylaine_output_size, 'GuylaineV2')
+    cattle = Cattle.Cattle(guylaine_output_size, ship_input_size, 6, 'Cattle')
+    guylaine_output = guylaine.act(state)
 
+    ship_input = np.array([120, 120, 255])
+    output = cattle.act(guylaine_output, ship_input)
+
+    logging.debug("act_value: %s", guylaine_output)
     # brain = Guylaine.Guylaine(planetStates, shipStates, len(g.Action), sys.argv[1])
     # brain.load()
     # brain.setInitState(planetStates, shipStates)
@@ -55,32 +61,28 @@ try:
 
         command_queue = []
 
-        oldPlanetStates = np.copy(planetStates)
-        oldShipStates = np.copy(shipStates)
-        planetStates, shipStates = nnutils.Observe(game_map)
+        oldState = np.copy(state)
+        state = nnutils.Observe(game_map)
 
-        actionIndex = brain.getAction(planetStates, shipStates)
-        actions = np.zeros(len(g.Action))
-        actions[actionIndex] = 1
+        act_value = guylaine.act(state)
 
         for ship in game.map.get_me().all_ships():
-            command = g.doAction(game_map, ship, actions)
+            command = g.doAction(game_map, ship, act_value)
             logging.debug(command)
             if (command != None):
                 command_queue.append(command)
         
-
         reward = nnutils.GetReward(game_map)
         
-        brain.setPerception(oldPlanetStates, oldShipStates, actions, reward, planetStates, shipStates, False)
+        guylaine.remember(oldState, act_value, reward, state, False)
 
         game.send_command_queue(command_queue)
 
 except Exception as e:
     try:
         logging.exception(str(e))
-        brain.save()
-        brain.replay(25)
+        guylaine.save()
+        guylaine.replay(25)
     except Exception as f:
         logging.exception(str(f))
     # traceback.print_exc()

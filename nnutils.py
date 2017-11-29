@@ -51,29 +51,18 @@ def Observe(map):
         nbStates += len(shipsStates[i])
 
     states = np.ndarray(shape=(nbStates, tileWidth, tileHeight))
-    logging.debug(states.shape)
-
-
-# Debugging/logging of shapes
-    logging.debug(states.shape)
-    logging.debug("planets.shape")
+    
     currentState = 0
 
     for i in range(0, len(planetsStates)):
-        logging.debug(planetsStates[i].shape)
         states[currentState] = planetsStates[i]
         currentState += 1
 
-    logging.debug("ships.shape")
     for p in range(0, len(shipsStates)):
         for i in range(0, len(shipsStates[p])):
-            logging.debug(shipsStates[p][i].shape)
             states[currentState] = shipsStates[p][i]
             currentState += 1
-            
 
-    logging.debug("states.shape")
-    logging.debug(states.shape)
     return states
 
 def discretizePlanets(map):

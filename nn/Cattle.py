@@ -1,21 +1,26 @@
 import random
 import numpy as np
 from collections import deque
+
+import keras
 from keras.models import Sequential, Model
-from keras.layers import Dense, Input
+from keras.layers import Dense, Input, Embedding, Conv2D, Flatten, Activation, MaxPooling2D
 from keras.optimizers import Adam
 from keras.utils import to_categorical
+
 import logging
 import pickle
 
 EPISODES = 1000
+action_size = 10
 
 
-class DQNAgent:
-    def __init__(self, state_size, action_size, name):
+class Cattle:
+    def __init__(self, guylaine_input_size, ship_input_size, output_size, name):
         self.name = name
-        self.state_size = state_size
-        self.action_size = action_size
+        self.guylaine_input_size = guylaine_input_size
+        self.ship_input_size = ship_input_size
+        self.output_size = output_size
         self.memory = deque(maxlen=2000)
         self.gamma = 0.95    # discount rate
         self.epsilon = 1.0  # exploration rate
@@ -26,13 +31,25 @@ class DQNAgent:
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
-        inputs = Input(shape=(self.state_size,),)
-        x = Dense(24, input_dim=self.state_size, activation='relu')(inputs)
+        # inputs = Input(shape=(self.state_size,self.state_channels),name='states_input')
+        # x = Dense(24, input_dim=self.state_size, activation='relu')(inputs)
         # x = Dense(24, activation='relu')(x)
 
-        predictions = Dense(self.action_size, activation='linear')(x)
+        # guylaine_input = Input(shape=(784,))
 
-        model = Model(inputs=inputs, outputs=predictions)
+        guylaine_input = Input(shape=(self.guylaine_input_size,), name='ship_guylaine_input')
+
+        ship_input = Input(shape=(self.ship_input_size,), name='ship_input')
+        
+        x = keras.layers.concatenate([guylaine_input, ship_input])
+
+        x = Dense(64, activation='relu')(x)
+        x = Dense(64, activation='relu')(x)
+        x = Dense(64, activation='relu')(x)
+        ship_output = Dense(self.output_size, activation='sigmoid', name='cattle_output')(x)
+
+        model = Model(inputs=[guylaine_input, ship_input], outputs=ship_output)
+
         model.compile(loss='mse',
                       optimizer=Adam(lr=self.learning_rate))
         return model
@@ -40,11 +57,13 @@ class DQNAgent:
     def remember(self, state, action, reward, next_state, done):
         self.memory.append((state, action, reward, next_state, done))
 
-    def act(self, state):
-        if np.random.rand() <= self.epsilon:
-            return random.randrange(self.action_size)
-        act_values = self.model.predict(state)
-        return np.argmax(act_values[0])  # returns action
+    def act(self, guylaine_input, ship_input):
+        # if np.random.rand() <= self.epsilon:
+        #     return random.randrange(self.output_size)
+        
+        t = ship_input.reshape(1, ship_input.shape[0])
+        act_values = self.model.predict({'ship_guylaine_input': guylaine_input, 'ship_input': t})
+        return act_values
 
     def replay(self, batch_size):
         minBatchSize = batch_size

@@ -2,7 +2,7 @@ import random
 import numpy as np
 from collections import deque
 from keras.models import Sequential, Model
-from keras.layers import Dense, Input, Convolution2D, Flatten, Activation, MaxPooling2D
+from keras.layers import Dense, Input, Conv2D, Flatten, Activation, MaxPooling2D
 from keras.optimizers import Adam
 from keras.utils import to_categorical
 import logging
@@ -36,12 +36,12 @@ class GuylaineV2:
         # predictions = Dense(self.output_size, activation='linear')(x)
         model = Sequential()
         
-        model.add(Convolution2D(32, (3, 3), data_format="channels_last",
+        model.add(Conv2D(32, (3, 3), data_format="channels_last",
             input_shape=(self.state_channels, self.state_width, self.state_height), name='conv1'))
         model.add(Activation('relu'))
         model.add(MaxPooling2D(pool_size=(2, 2), name='maxpool1', data_format="channels_last"))
 
-        model.add(Convolution2D(32, (3, 3), name='conv2', data_format="channels_last"))
+        model.add(Conv2D(32, (3, 3), name='conv2', data_format="channels_last"))
         model.add(Activation('relu'))
         model.add(MaxPooling2D(pool_size=(2, 2), name='maxpool2', data_format="channels_last"))
 
@@ -67,6 +67,7 @@ class GuylaineV2:
     def act(self, state):
         # if np.random.rand() <= self.epsilon:
         #     return random.randrange(self.output_size)
+        state = state.reshape(1, state.shape[0], state.shape[1], state.shape[2])
         act_values = self.model.predict(state)
         return act_values
 
