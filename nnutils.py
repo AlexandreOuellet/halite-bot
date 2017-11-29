@@ -128,3 +128,6 @@ def _swapArrays(index1, index2, array):
 
 def mapToArrayIndex(x, y):
     return (int)((x/tileWidth) + tileWidth*(y/tileHeight))
+
+def getShipState(ship):
+    return np.array([ship.x, ship.y, ship.health, ship.docking_status])

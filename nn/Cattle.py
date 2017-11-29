@@ -10,9 +10,9 @@ from keras.utils import to_categorical
 
 import logging
 import pickle
+import os.path
 
 EPISODES = 1000
-action_size = 10
 
 
 class Cattle:
@@ -54,56 +54,47 @@ class Cattle:
                       optimizer=Adam(lr=self.learning_rate))
         return model
 
-    def remember(self, state, action, reward, next_state, done):
-        self.memory.append((state, action, reward, next_state, done))
+    def remember(self, guylaine_output, ship_state, action, reward, next_guylaine_output, next_ship_state, done):
+        self.memory.append(guylaine_output, ship_state, action, reward, next_guylaine_output, next_ship_state, done)
 
-    def act(self, guylaine_input, ship_input):
-        # if np.random.rand() <= self.epsilon:
-        #     return random.randrange(self.output_size)
-        
+    def act(self, guylaine_output, ship_input, force_predict = False):
+        if np.random.rand() <= self.epsilon and force_predict == False:
+            return random.randrange(self.output_size)
+
         t = ship_input.reshape(1, ship_input.shape[0])
-        act_values = self.model.predict({'ship_guylaine_input': guylaine_input, 'ship_input': t})
-        return act_values
+        act_values = self.model.predict({'ship_guylaine_input': guylaine_output, 'ship_input': t})
+        return np.argmax(act_values)
 
-    def replay(self, batch_size):
-        minBatchSize = batch_size
-        if (len(self.memory) < batch_size):
-            minBatchSize = len(self.memory)
+    # def replay(self, batch_size):
+    #     minBatchSize = batch_size
+    #     if (len(self.memory) < batch_size):
+    #         minBatchSize = len(self.memory)
 
-        minibatch = random.sample(self.memory, minBatchSize)
-        for state, action, reward, next_state, done in minibatch:
-            target = reward
+    #     minibatch = random.sample(self.memory, minBatchSize)
+    #     for guylaine_output, ship_state, action, reward, next_guylaine_output, next_ship_state in minibatch:
+    #         target = reward
 
-            state = np.reshape(state, [1, self.state_size])
+    #         if not done:
+    #                 target = (reward + self.gamma * self.act(next_guylaine_output, next_ship_state, True))
 
-            next_state = np.reshape(next_state, [1, self.state_size])
-
-            # logging.debug('Hello World!' + self.name)
-            # logging.debug(next_state)
-            # test = self.model.predict(next_state)
-
-            # logging.debug('Hello World!')
-            # logging.debug(str(test))
-
-
-            if not done:
-                    target = (reward + self.gamma *
-                          np.amax(self.model.predict(next_state)[0]))
-            target_f = self.model.predict(state)
+    #         target_f = self.act(guylaine_output, ship_state, True)
             
-            action_index = np.argmax(action)
+    #         action_index = np.argmax(action)
 
-            target_f[0][action_index] = target
-            self.model.fit(state, target_f, epochs=1, verbose=0)
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
+    #         target_f[0][action_index] = target
+    #         self.model.fit(state, target_f, epochs=1, verbose=0)
+    #     if self.epsilon > self.epsilon_min:
+    #         self.epsilon *= self.epsilon_decay
 
     def load(self):
-        self.model.load_weights(self.name)
-        # self.memory = pickle.load(open(self.name + '_memory', 'rb'))
-        self.epsilon = pickle.load(open(self.name + '_epsilon', 'rb'))
+        if os.path.isfile(self.name):
+            self.model.load_weights(self.name)
+        if os.path.isfile(self.name + '_memory'):
+            self.memory = pickle.load(open(self.name + '_memory', 'rb'))
+        if os.path.isfile(self.name + '_epsilon'):
+            self.epsilon = pickle.load(open(self.name + '_epsilon', 'rb'))
 
     def save(self):
         self.model.save_weights(self.name)
-        # pickle.dump(self.memory, open(self.name + '_memory', 'wb'))
+        pickle.dump(self.memory, open(self.name + '_memory', 'wb'))
         pickle.dump(self.epsilon, open(self.name + '_epsilon', 'wb'))

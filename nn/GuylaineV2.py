@@ -4,9 +4,10 @@ from collections import deque
 from keras.models import Sequential, Model
 from keras.layers import Dense, Input, Conv2D, Flatten, Activation, MaxPooling2D
 from keras.optimizers import Adam
-from keras.utils import to_categorical
+
 import logging
 import pickle
+import os.path
 
 EPISODES = 1000
 action_size = 10
@@ -29,11 +30,6 @@ class GuylaineV2:
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
-        # inputs = Input(shape=(self.state_size,self.state_channels),name='states_input')
-        # x = Dense(24, input_dim=self.state_size, activation='relu')(inputs)
-        # x = Dense(24, activation='relu')(x)
-
-        # predictions = Dense(self.output_size, activation='linear')(x)
         model = Sequential()
         
         model.add(Conv2D(32, (3, 3), data_format="channels_last",
@@ -65,8 +61,9 @@ class GuylaineV2:
         self.memory.append((state, action, reward, next_state, done))
 
     def act(self, state):
-        # if np.random.rand() <= self.epsilon:
-        #     return random.randrange(self.output_size)
+        if np.random.rand() <= self.epsilon:
+            return np.random.rand(self.output_size)
+        
         state = state.reshape(1, state.shape[0], state.shape[1], state.shape[2])
         act_values = self.model.predict(state)
         return act_values
@@ -80,18 +77,6 @@ class GuylaineV2:
         for state, action, reward, next_state, done in minibatch:
             target = reward
 
-            state = np.reshape(state, [1, self.state_size])
-
-            next_state = np.reshape(next_state, [1, self.state_size])
-
-            # logging.debug('Hello World!' + self.name)
-            # logging.debug(next_state)
-            # test = self.model.predict(next_state)
-
-            # logging.debug('Hello World!')
-            # logging.debug(str(test))
-
-
             if not done:
                     target = (reward + self.gamma *
                           np.amax(self.model.predict(next_state)[0]))
@@ -101,15 +86,19 @@ class GuylaineV2:
 
             target_f[0][action_index] = target
             self.model.fit(state, target_f, epochs=1, verbose=0)
+
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
     def load(self):
-        self.model.load_weights(self.name)
-        # self.memory = pickle.load(open(self.name + '_memory', 'rb'))
-        self.epsilon = pickle.load(open(self.name + '_epsilon', 'rb'))
+        if os.path.isfile(self.name):
+            self.model.load_weights(self.name)
+        if os.path.isfile(self.name + '_memory'):
+            self.memory = pickle.load(open(self.name + '_memory', 'rb'))
+        if os.path.isfile(self.name + '_epsilon'):
+            self.epsilon = pickle.load(open(self.name + '_epsilon', 'rb'))
 
     def save(self):
         self.model.save_weights(self.name)
-        # pickle.dump(self.memory, open(self.name + '_memory', 'wb'))
+        pickle.dump(self.memory, open(self.name + '_memory', 'wb'))
         pickle.dump(self.epsilon, open(self.name + '_epsilon', 'wb'))
