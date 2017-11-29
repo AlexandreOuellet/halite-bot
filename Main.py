@@ -52,7 +52,7 @@ try:
     cattle.load()
 
     ship_input = np.array([120, 120, 255, 1])
-    output = cattle.act(guylaine_output, ship_input)
+    output = cattle.predict(guylaine_output, ship_input)
 
     while True:
         # TURN START
@@ -72,9 +72,9 @@ try:
 
         for ship in game.map.get_me().all_ships():
             ship_state = nnutils.getShipState(ship)
-            ship_action = cattle.act(guylaine_output, ship_state)
+            ship_action = cattle.predict(guylaine_output, ship_state)
 
-            cattle.remember()
+            cattle.remember(guylaine_output, ship_state, ship_action, reward, guylaine_output, ship_state, False)
 
             command = g.doAction(game_map, ship, ship_action)
             logging.debug(command)
