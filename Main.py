@@ -36,45 +36,43 @@ try:
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '99'
     # tf.logging.set_verbosity(tf.logging.ERROR)
 
-    import nn.GuylaineV2 as GuylaineV2
+    # import nn.GuylaineV2 as GuylaineV2
     import nn.Cattle as Cattle
 
-    state = nnutils.Observe(game.map)
+    game_state = nnutils.Observe(game.map)
 
     ship_input_size = 4
     guylaine_output_size = 100
     cattle_output_size = 6 # dock/undock/north/south/east/west
-    guylaine = GuylaineV2.GuylaineV2(nnutils.tileWidth, nnutils.tileHeight, len(state), guylaine_output_size, 'data/GuylaineV2' + sys.argv[1])
-    cattle = Cattle.Cattle(guylaine_output_size, ship_input_size, 6, 'data/Cattle' + sys.argv[1])
-    guylaine_output = guylaine.act(state)
+    # guylaine = GuylaineV2.GuylaineV2(nnutils.tileWidth, nnutils.tileHeight, len(state), guylaine_output_size, 'data/GuylaineV2' + sys.argv[1])
+    cattle = Cattle.Cattle((14, nnutils.tileWidth, nnutils.tileHeight), (ship_input_size,), 6, 'data/Cattle' + sys.argv[1])
+    # guylaine_output = guylaine.act(state)
 
-    guylaine.load()
+    # guylaine.load()
     cattle.load()
 
-    ship_input = np.array([120, 120, 255, 1])
-    output = cattle.predict(guylaine_output, ship_input)
+    ship_state = np.array([120, 120, 255, 1])
+    output = cattle.predict(game_state, ship_state)
 
     while True:
         # TURN START
         # Update the map for the new turn and get the latest version
-        oldState = np.copy(state)
+        oldState = np.copy(game_state)
         game_map = game.update_map()
         nbTurn += 1
-        state = nnutils.Observe(game_map)
+        game_state = nnutils.Observe(game_map)
 
         reward = nnutils.GetReward(game_map)
         logging.debug("Reward: %d", reward)
 
-        guylaine.remember(oldState, guylaine_output, reward, state, False)
         command_queue = []
 
-        guylaine_output = guylaine.act(state)
 
         for ship in game.map.get_me().all_ships():
             ship_state = nnutils.getShipState(ship)
-            ship_action = cattle.predict(guylaine_output, ship_state)
+            ship_action = cattle.predict(game_state, ship_state)
 
-            cattle.remember(guylaine_output, ship_state, ship_action, reward, guylaine_output, ship_state, False)
+            cattle.remember(game_state, ship_state, ship_action, reward, ship_state, False)
 
             command = g.doAction(game_map, ship, ship_action)
             logging.debug(command)
@@ -89,8 +87,7 @@ except Exception as e:
         logging.exception(str(e))
         if nbTurn != 0:
             cattle.save()
-            guylaine.save()
-
+            # guylaine.save()
             cattle.replay(nbTurn)
             # guylaine.replay(nbTurn)
     except Exception as f:
