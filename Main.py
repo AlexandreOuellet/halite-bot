@@ -54,6 +54,8 @@ try:
     ship_state = np.array([120, 120, 255, 1])
     output = cattle.predict(game_state, ship_state)
 
+    ship_action_dictionary = {}
+
     while True:
         # TURN START
         # Update the map for the new turn and get the latest version
@@ -63,18 +65,37 @@ try:
         game_state = nnutils.Observe(game_map)
 
         reward = nnutils.GetReward(game_map)
-        logging.debug("Reward: %d", reward)
+        logging.debug("Reward: %s", reward)
 
+
+        if ship_action_dictionary != None:
+            for key in ship_action_dictionary.keys():
+                ship_state, action_taken = ship_action_dictionary[key]
+                ship = game.map.get_me().get_ship(key)
+
+
+                if ship != None:
+                    next_ship_state = nnutils.getShipState(ship) 
+                
+                    cattle.remember(oldState, ship_state, action_taken, reward, game_state, next_ship_state, ship != None)
+        
         command_queue = []
 
 
         for ship in game.map.get_me().all_ships():
             ship_state = nnutils.getShipState(ship)
             ship_action = cattle.predict(game_state, ship_state)
+            logging.debug("ship_action: %s", ship_action)
 
-            cattle.remember(game_state, ship_state, ship_action, reward, ship_state, False)
+            action_index = np.argmax(ship_action)
+            
+            logging.debug("action_index: %s", action_index)
 
-            command = g.doAction(game_map, ship, ship_action)
+
+            ship_action_dictionary[ship.id] = (ship_state, action_index)
+            # cattle.remember(game_state, ship_state, ship_action, reward, ship_state, False)
+
+            command = g.doAction(game_map, ship, action_index)
             logging.debug(command)
 
             if (command != None):
@@ -85,10 +106,11 @@ try:
 except Exception as e:
     try:
         logging.exception(str(e))
-        if nbTurn != 0:
-            cattle.save()
+        if nbTurn != 0 and sys.argv[1] == 'G1':
             # guylaine.save()
-            cattle.replay(nbTurn)
+            # cattle.replay(nbTurn)
+            cattle.save()
+
             # guylaine.replay(nbTurn)
     except Exception as f:
         logging.exception(str(f))

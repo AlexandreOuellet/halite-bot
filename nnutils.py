@@ -22,14 +22,24 @@ def GetReward(map):
             totalShips[player.id] += 1
             totalShipsHealth[player.id] += ship.health
 
-    totalShipReward = totalShips[myId] / np.sum(totalShips)
-    shipHealthReward = totalShipsHealth[myId] / np.sum(totalShipsHealth)
+    logging.debug(" np.sum(totalShips) %s",  np.sum(totalShips))
+    totalShipReward = totalShips[myId] - (np.sum(totalShips) - totalShips[myId])
+    shipHealthReward = totalShipsHealth[myId] - (np.sum(totalShipsHealth) - totalShipsHealth[myId]) 
 
     productionSpeedReward = np.sum(productionSpeedPerPlayer)
     if productionSpeedReward != 0:
-        productionSpeedReward = productionSpeedPerPlayer[myId] / productionSpeedReward 
+        productionSpeedReward = productionSpeedPerPlayer[myId] - (productionSpeedReward - productionSpeedPerPlayer[myId]) 
 
-    return np.average([totalShipReward, shipHealthReward, productionSpeedReward])
+
+    logging.debug("totalShipReward %s",  totalShipReward)
+    logging.debug("shipHealthReward %s",  shipHealthReward)
+    logging.debug("productionSpeedReward %s",  productionSpeedReward)
+
+
+    return (totalShipReward + shipHealthReward + productionSpeedReward) / 3.0
+
+    # average = np.average((totalShipReward, shipHealthReward, productionSpeedReward))
+    # return average
 
 def _calculateAverage(myId, toCalculate):
     myNb = toCalculate[myId]
@@ -130,4 +140,4 @@ def mapToArrayIndex(x, y):
     return (int)((x/tileWidth) + tileWidth*(y/tileHeight))
 
 def getShipState(ship):
-    return np.array([ship.x, ship.y, ship.health, ship.docking_status])
+    return np.array([ship.x, ship.y, ship.health, int(ship.docking_status.value)])

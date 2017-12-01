@@ -2,7 +2,7 @@ import random
 import numpy as np
 from collections import deque
 
-import keras
+# import keras
 from keras.models import Sequential, Model
 from keras.layers import Dense, Input, Embedding, Conv2D, Flatten, Activation, MaxPooling2D
 from keras.optimizers import Adam
@@ -13,6 +13,9 @@ import nnutils
 import logging
 import pickle
 import os.path
+
+import time
+
 
 EPISODES = 1000
 
@@ -33,7 +36,7 @@ class Cattle:
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
-        guylaine_input = Input(shape=(self.guylaine_input_shape[0], self.guylaine_input_shape[1], self.guylaine_input_shape[2]))
+        guylaine_input = Input(shape=(self.guylaine_input_shape[0], self.guylaine_input_shape[1], self.guylaine_input_shape[2]), name='guylaine_input')
         guylaine = Conv2D(32, (3, 3), name='guylaine_conv1', activation='relu')(guylaine_input)
         guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool1')(guylaine)
 
@@ -69,9 +72,11 @@ class Cattle:
 
     def predict(self, game_state, ship_state, force_predict = False):
         if np.random.rand() <= self.epsilon and force_predict == False:
-            return random.randrange(self.output_size)
+            return np.random.rand(self.output_size)
 
-        # t = ship_input.reshape(1, ship_input.shape[0])
+        game_state = game_state.reshape(1, game_state.shape[0], game_state.shape[1], game_state.shape[2])
+        ship_state = ship_state.reshape(1, ship_state.shape[0])
+
         act_values = self.model.predict({'guylaine_input': game_state, 'ship_input': ship_state})
         return act_values
 
@@ -82,41 +87,64 @@ class Cattle:
         if (len(self.memory) < batch_size):
             minBatchSize = len(self.memory)
 
-        # guylaine_inputs = np.zeros((self.guylaine_input_size,))
-        # ship_input = np.zeros((self.ship_input_size,))
+        guylaine_inputs = np.zeros(shape=(1, self.guylaine_input_shape[0], self.guylaine_input_shape[1], self.guylaine_input_shape[2]))
+        ship_input = np.zeros(shape=(1, self.ship_input_shape[0]))
 
         minibatch = random.sample(self.memory, minBatchSize)
+
+        game_state_batch = []
+        ship_state_batch = []
+
+        targets = np.zeros((len(minibatch), self.output_size))
+
         for i in range(0, len(minibatch)):
-            game_state, ship_state, action, reward, next_game_state, next_ship_state, done = minibatch[i]
+            logging.debug("Gathering data for batch i:%s", i)
+            game_state, ship_state, action_taken, reward, next_game_state, next_ship_state, done = minibatch[i]
 
-            guylaine_inputs[i:i+1] = np.expand_dims(game_state, axis=0)
-            ship_input[i:i+1] = np.ship_state(ship_state, axis=0)
+            game_state_batch.append(game_state)
+            ship_state_batch.append(ship_state)
+            targets[i] = self.predict(game_state, ship_state, True)
+            targets[i][action_taken] = reward
 
-            targets[i] = self.predict(guylaine_output, ship_input, True)
-            Q_sa = self.predict(next_guylaine_output, next_ship_state, True)
+            if not done:
+                Q_sa = self.predict(next_game_state, next_ship_state, True)
+                estimated_reward = np.max(Q_sa)
+                targets[i][action_taken] = (reward + self.gamma * estimated_reward)
+                
+            # y_batch.append(target)
 
-            if done:
-                targets[i, action] = reward
-            else:
-                estimated_reward = self.q_model.predict({'ship_guylaine_input': guylaine_output, 'ship_input': ship_state, 'action_input': action})
-                target = (reward + self.gamma * estimated_reward)
-
-                targets[i, action] = reward + target
-
-            self.model.train_on_batch({'ship_guylaine_input': guylaine_output, 'ship_input': ship_state}, targets)
+        logging.debug("Done gathering data for batch")
+        if len(ship_state_batch) != 0:
+            
+            logging.debug("Fitting the model")
+            self.model.fit({'guylaine_input': np.array(game_state_batch), 'ship_input': np.array(ship_state_batch)}, np.array(targets), batch_size=len(ship_state_batch), verbose=0)
+            logging.debug("Done fitting the model")
 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+            
+        logging.debug("Training done.  epsilon: %s", self.epsilon)
+
 
     def load(self):
-        if os.path.isfile(self.name + '_model'):
-            self.model.load_weights(self.name + '_model')
+        if os.path.isfile('data/model'):
+            self.model.load_weights('data/model')
         # if os.path.isfile(self.name + '_memory'):
         #     self.memory = pickle.load(open(self.name + '_memory', 'rb'))
-        if os.path.isfile(self.name + '_epsilon'):
-            self.epsilon = pickle.load(open(self.name + '_epsilon', 'rb'))
+        if os.path.isfile('data/epsilon'):
+            self.epsilon = pickle.load(open('data/epsilon', 'rb'))
 
     def save(self):
-        self.model.save_weights(self.name + '_model')
-        # pickle.dump(self.memory, open(self.name + '_memory', 'wb'))
-        pickle.dump(self.epsilon, open(self.name + '_epsilon', 'wb'))
+        self.model.save_weights('data/model')
+        pickle.dump(self.epsilon, open('data/epsilon', 'wb'))
+
+    def loadMemory(self, fileName):
+        if os.path.isfile(fileName):
+            self.memory = pickle.load(open(fileName, 'rb'))
+
+
+    def saveMemory(self):
+        millis = int(round(time.time() * 1000))
+        pickle.dump(self.memory, open('data/memory/' + str(millis), 'wb'))
+
+
