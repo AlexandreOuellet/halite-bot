@@ -12,8 +12,8 @@ cattle = Cattle.Cattle((14, nnutils.tileWidth, nnutils.tileHeight), (ship_input_
 # guylaine.load()
 cattle.load()
 
-for file in os.listdir("/data/memory/"):
-    fullFile = os.path.join("/mydir", file)
+for file in os.listdir("data/memory/"):
+    fullFile = os.path.join("data/memory/", file)
 
     cattle.loadMemory(fullFile)
     cattle.replay(25)

@@ -109,7 +109,7 @@ except Exception as e:
         if nbTurn != 0 and sys.argv[1] == 'G1':
             # guylaine.save()
             # cattle.replay(nbTurn)
-            cattle.save()
+            cattle.saveMemory()
 
             # guylaine.replay(nbTurn)
     except Exception as f:

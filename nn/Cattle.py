@@ -2,7 +2,7 @@ import random
 import numpy as np
 from collections import deque
 
-# import keras
+import keras
 from keras.models import Sequential, Model
 from keras.layers import Dense, Input, Embedding, Conv2D, Flatten, Activation, MaxPooling2D
 from keras.optimizers import Adam
@@ -83,9 +83,9 @@ class Cattle:
     def replay(self, batch_size):
         logging.debug("Training")
 
-        minBatchSize = batch_size
-        if (len(self.memory) < batch_size):
-            minBatchSize = len(self.memory)
+        minBatchSize = len(self.memory)
+        # if (len(self.memory) < batch_size):
+        #     minBatchSize = len(self.memory)
 
         guylaine_inputs = np.zeros(shape=(1, self.guylaine_input_shape[0], self.guylaine_input_shape[1], self.guylaine_input_shape[2]))
         ship_input = np.zeros(shape=(1, self.ship_input_shape[0]))
