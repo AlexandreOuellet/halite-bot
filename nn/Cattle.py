@@ -128,16 +128,16 @@ class Cattle:
 
 
     def load(self):
-        if os.path.isfile('data/model'):
-            self.model.load_weights('data/model')
+        if os.path.isfile('./data/model'):
+            self.model.load_weights('./data/model')
         # if os.path.isfile(self.name + '_memory'):
         #     self.memory = pickle.load(open(self.name + '_memory', 'rb'))
-        if os.path.isfile('data/epsilon'):
-            self.epsilon = pickle.load(open('data/epsilon', 'rb'))
+        if os.path.isfile('./data/epsilon'):
+            self.epsilon = pickle.load(open('./data/epsilon', 'rb'))
 
     def save(self):
-        self.model.save_weights('data/model')
-        pickle.dump(self.epsilon, open('data/epsilon', 'wb'))
+        self.model.save_weights('./data/model')
+        pickle.dump(self.epsilon, open('./data/epsilon', 'wb'))
 
     def loadMemory(self, fileName):
         if os.path.isfile(fileName):
