@@ -124,6 +124,7 @@ class Cattle:
             self.epsilon *= self.epsilon_decay
             
         logging.debug("Training done.  epsilon: %s", self.epsilon)
+        print("Training done.  epsilon: %s", self.epsilon)
 
 
     def load(self):

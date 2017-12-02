@@ -18,3 +18,4 @@ for file in os.listdir("data/memory/"):
     cattle.loadMemory(fullFile)
     cattle.replay(25)
     cattle.save()
+    os.remove(fullFile)
