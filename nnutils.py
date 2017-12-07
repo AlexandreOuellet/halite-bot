@@ -1,10 +1,16 @@
 import hlt
 import logging
 import numpy as np
+import string
 
 # the world seems to always be a ratio of 24x16
 tileWidth = 320
 tileHeight = 240
+
+angleStep = 15 # increments of 15 for angle
+nbAngleStep = int(360/angleStep) # How many angle steps we have
+speedStep = 2 # increments of 2 for speed
+nbSpeedStep = int(8/speedStep) # 1, 3, 5, 7
 
 def GetReward(map):
     myId = map.get_me().id
@@ -92,7 +98,7 @@ def discretizePlanets(map):
         planetsCurrentProduction[int(planet.x)][int(planet.y)] = planet.current_production
         planetsRemainingResources[int(planet.x)][int(planet.y)] = planet.remaining_resources
         if planet.owner != None:
-            planetsOwner[int(planet.x)][int(planet.y)] = planet.owner
+            planetsOwner[int(planet.x)][int(planet.y)] = planet.owner.id
         planetsHealth[int(planet.x)][int(planet.y)] = planet.health
 
         # planetsDockedShipPlayer1[tileIndex] = [None] * tileWidth * tileHeight
@@ -141,3 +147,40 @@ def mapToArrayIndex(x, y):
 
 def getShipState(ship):
     return np.array([ship.x, ship.y, ship.health, int(ship.docking_status.value)])
+
+def parseCommandToActionIndex(command):
+    if command == None:
+        return None
+    commands = command.split(" ")
+    if commands[0] == 'd':
+        return 0
+    if commands[0] == 'u':
+        return 1
+    if commands[0] == 't':
+        speed = int(commands[2])
+        angle = int(commands[3])
+
+        speedIndex = int(speed/speedStep)
+        angleIndex = int(angle/angleStep)
+        
+        return int((angleIndex * nbSpeedStep) + speedIndex + 2)
+
+def doActionIndex(map, ship, actionIndex):
+    if actionIndex == None:
+        return None
+    if actionIndex == 0:
+        for planet in map.all_planets():
+            if ship.can_dock(planet):
+                return ship.dock(planet)
+
+        return None
+
+    if actionIndex == 1:
+        return ship.undock()
+    if actionIndex == 3:
+        return None
+    else:
+        index = actionIndex - 2
+        angle = int(index/nbSpeedStep) * angleStep
+        speed = int(index % nbSpeedStep) + 1
+        return ship.thrust(speed, angle)

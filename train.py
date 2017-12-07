@@ -4,9 +4,9 @@ import nnutils
 
 ship_input_size = 4
 guylaine_output_size = 100
-cattle_output_size = 6 # dock/undock/north/south/east/west
+cattle_output_size = 3 + nnutils.nbAngleStep * nnutils.nbSpeedStep # dock/undock/nothing
 # guylaine = GuylaineV2.GuylaineV2(nnutils.tileWidth, nnutils.tileHeight, len(state), guylaine_output_size, 'data/GuylaineV2' + sys.argv[1])
-cattle = Cattle.Cattle((14, nnutils.tileWidth, nnutils.tileHeight), (ship_input_size,), 6, 'data/CattleG1')
+cattle = Cattle.Cattle((14, nnutils.tileWidth, nnutils.tileHeight), (ship_input_size,), cattle_output_size, 'data/CattleG1')
 # guylaine_output = guylaine.act(state)
 
 # guylaine.load()

@@ -43,16 +43,17 @@ try:
 
     ship_input_size = 4
     guylaine_output_size = 100
-    cattle_output_size = 6 # dock/undock/north/south/east/west
+    cattle_output_size = 3 + nnutils.nbAngleStep * nnutils.nbSpeedStep # dock/undock/nothing
+    logging.debug("cattle_output_size: %s", cattle_output_size)
     # guylaine = GuylaineV2.GuylaineV2(nnutils.tileWidth, nnutils.tileHeight, len(state), guylaine_output_size, 'data/GuylaineV2' + sys.argv[1])
-    cattle = Cattle.Cattle((14, nnutils.tileWidth, nnutils.tileHeight), (ship_input_size,), 6, 'data/Cattle' + sys.argv[1])
+    cattle = Cattle.Cattle((14, nnutils.tileWidth, nnutils.tileHeight), (ship_input_size,), cattle_output_size, 'data/Cattle' + sys.argv[1])
     # guylaine_output = guylaine.act(state)
 
     # guylaine.load()
     cattle.load()
 
     ship_state = np.array([120, 120, 255, 1])
-    output = cattle.predict(game_state, ship_state)
+    # output = cattle.predict(game_state, ship_state)
 
     ship_action_dictionary = {}
 
@@ -84,7 +85,7 @@ try:
 
         for ship in game.map.get_me().all_ships():
             ship_state = nnutils.getShipState(ship)
-            ship_action = cattle.predict(game_state, ship_state)
+            ship_action = cattle.predict(game_state, ship_state, ship, game_map)
             logging.debug("ship_action: %s", ship_action)
 
             action_index = np.argmax(ship_action)
@@ -95,7 +96,7 @@ try:
             ship_action_dictionary[ship.id] = (ship_state, action_index)
             # cattle.remember(game_state, ship_state, ship_action, reward, ship_state, False)
 
-            command = g.doAction(game_map, ship, action_index)
+            command = nnutils.doActionIndex(game_map, ship, action_index)
             logging.debug(command)
 
             if (command != None):
