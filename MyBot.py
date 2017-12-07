@@ -11,12 +11,9 @@ Note: Please do not place print statements here as they are used to communicate 
 to log anything use the logging module.
 """
 
+
 nbTurn = 0
 try:
-    import sys
-    stdout = sys.stdout
-    sys.stdout = open('./null.txt', 'w')
-
     # Let's start by importing the Halite Starter Kit so we can interface with the Halite engine
     import hlt
     import logging
@@ -31,7 +28,6 @@ try:
     import os
     #disable warning of tensorflow
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '99'
-
     tf.logging.set_verbosity(tf.logging.ERROR)
 
     import pickle
@@ -43,7 +39,6 @@ try:
 
     # import nn.GuylaineV2 as GuylaineV2
     import nn.Cattle as Cattle
-    sys.stdout = stdout
 
     game_state = nnutils.Observe(game.map)
 

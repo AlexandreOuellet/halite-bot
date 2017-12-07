@@ -2,20 +2,19 @@ import random
 import numpy as np
 from collections import deque
 
-import sys
-stdout = sys.stdout
-sys.stdout = open('./null.txt', 'w')
-
 import tensorflow as tf
 import os
 #disable warning of tensorflow
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '99'
 
-import keras
-from keras.models import Sequential, Model
-from keras.layers import Dense, Input, Embedding, Conv2D, Flatten, Activation, MaxPooling2D
-from keras.optimizers import Adam
-from keras.utils import to_categorical, plot_model
+from contextlib import redirect_stdout
+with open('help.txt', 'w') as f:
+    with redirect_stdout(f):
+        import keras
+        from keras.models import Sequential, Model
+        from keras.layers import Dense, Input, Embedding, Conv2D, Flatten, Activation, MaxPooling2D
+        from keras.optimizers import Adam
+        from keras.utils import to_categorical, plot_model
 
 
 import nnutils
@@ -26,8 +25,6 @@ import os.path
 
 import time
 from nn import starterBot
-
-sys.stdout = stdout
 
 
 EPISODES = 1000
