@@ -171,16 +171,22 @@ def doActionIndex(map, ship, actionIndex):
     if actionIndex == 0:
         for planet in map.all_planets():
             if ship.can_dock(planet):
+                logging.debug("Docking: %s, %s", ship, planet)
                 return ship.dock(planet)
 
+        logging.debug("Docking but nothing found: %s", ship)
         return None
 
     if actionIndex == 1:
+        logging.debug("Undocking: %s", ship)
         return ship.undock()
-    if actionIndex == 3:
+    if actionIndex == 2: # Do Nothing
+        logging.debug("Nothing to do: %s", ship)
         return None
     else:
         index = actionIndex - 2
         angle = int(index/nbSpeedStep) * angleStep
         speed = int(index % nbSpeedStep) + 1
+
+        logging.debug("Thrusting: ship:%s, speed:%d, angle%d", ship, speed, angle)
         return ship.thrust(speed, angle)

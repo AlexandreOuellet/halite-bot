@@ -14,16 +14,25 @@ to log anything use the logging module.
 nbTurn = 0
 try:
     import sys
+    stdout = sys.stdout
+    sys.stdout = open('./null.txt', 'w')
+
     # Let's start by importing the Halite Starter Kit so we can interface with the Halite engine
     import hlt
     import logging
 
     # GAME START
     # Here we define the bot's name as Guylaine and initialize the game, including communication with the Halite engine.
-    game = hlt.Game("Guylaine" + sys.argv[1])
+    game = hlt.Game("Guylaine")
 
     import tensorflow as tf
+
+
     import os
+    #disable warning of tensorflow
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '99'
+
+    tf.logging.set_verbosity(tf.logging.ERROR)
 
     import pickle
     # Then let's import the logging module so we can print out information
@@ -31,13 +40,10 @@ try:
     import nnutils
     import game as g
     import numpy as np
-    
-    #disable warning of tensorflow
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '99'
-    # tf.logging.set_verbosity(tf.logging.ERROR)
 
     # import nn.GuylaineV2 as GuylaineV2
     import nn.Cattle as Cattle
+    sys.stdout = stdout
 
     game_state = nnutils.Observe(game.map)
 
@@ -46,7 +52,7 @@ try:
     cattle_output_size = 3 + nnutils.nbAngleStep * nnutils.nbSpeedStep # dock/undock/nothing
     logging.debug("cattle_output_size: %s", cattle_output_size)
     # guylaine = GuylaineV2.GuylaineV2(nnutils.tileWidth, nnutils.tileHeight, len(state), guylaine_output_size, 'data/GuylaineV2' + sys.argv[1])
-    cattle = Cattle.Cattle((14, nnutils.tileWidth, nnutils.tileHeight), (ship_input_size,), cattle_output_size, 'data/Cattle' + sys.argv[1])
+    cattle = Cattle.Cattle((14, nnutils.tileWidth, nnutils.tileHeight), (ship_input_size,), cattle_output_size, 'data/Cattle')
     # guylaine_output = guylaine.act(state)
 
     # guylaine.load()
@@ -107,10 +113,10 @@ try:
 except Exception as e:
     try:
         logging.exception(str(e))
-        if nbTurn != 0 and sys.argv[1] == 'G1':
-            # guylaine.save()
-            # cattle.replay(nbTurn)
-            cattle.saveMemory()
+        # if nbTurn != 0 and sys.argv[1] == 'G1':
+        #     # guylaine.save()
+        #     # cattle.replay(nbTurn)
+        #     cattle.saveMemory()
 
             # guylaine.replay(nbTurn)
     except Exception as f:
