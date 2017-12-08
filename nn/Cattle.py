@@ -146,6 +146,6 @@ class Cattle:
 
     def saveMemory(self):
         millis = int(round(time.time() * 1000))
-        pickle.dump(self.memory, open('data/memory/' + str(millis), 'wb'))
+        pickle.dump(self.memory, open('./data/memory/' + str(millis), 'wb'))
 
 
