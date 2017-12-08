@@ -2,11 +2,20 @@ import random
 import numpy as np
 from collections import deque
 
-import keras
-from keras.models import Sequential, Model
-from keras.layers import Dense, Input, Embedding, Conv2D, Flatten, Activation, MaxPooling2D
-from keras.optimizers import Adam
-from keras.utils import to_categorical, plot_model
+import tensorflow as tf
+import os
+#disable warning of tensorflow
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '99'
+
+from contextlib import redirect_stdout
+with open('help.txt', 'w') as f:
+    with redirect_stdout(f):
+        import keras
+        from keras.models import Sequential, Model
+        from keras.layers import Dense, Input, Embedding, Conv2D, Flatten, Activation, MaxPooling2D
+        from keras.optimizers import Adam
+        from keras.utils import to_categorical, plot_model
+
 
 import nnutils
 
@@ -15,6 +24,7 @@ import pickle
 import os.path
 
 import time
+from nn import starterBot
 
 
 EPISODES = 1000
@@ -70,15 +80,29 @@ class Cattle:
     def remember(self, game_state, ship_state, action, reward, next_game_state, next_ship_state, done):
         self.memory.append((game_state, ship_state, action, reward, next_game_state, next_ship_state, done))
 
-    def predict(self, game_state, ship_state, force_predict = False):
-        if np.random.rand() <= self.epsilon and force_predict == False:
-            return np.random.rand(self.output_size)
-
+    def forcePredict(self,game_state, ship_state):
         game_state = game_state.reshape(1, game_state.shape[0], game_state.shape[1], game_state.shape[2])
         ship_state = ship_state.reshape(1, ship_state.shape[0])
 
         act_values = self.model.predict({'guylaine_input': game_state, 'ship_input': ship_state})
         return act_values
+        
+
+    def predict(self, game_state, ship_state, ship, game_map):
+        if np.random.rand() <= self.epsilon:
+            starter_action = starterBot.predict(ship, game_map)
+            logging.debug("starter_action: %s", starter_action)
+            index = nnutils.parseCommandToActionIndex(starter_action)
+            logging.debug("index: %s", index)
+            actions = np.random.rand(self.output_size)
+            if index == None:
+                actions[3] = 1
+            else:
+                actions[index] = 1
+            return actions
+            # return np.random.rand(self.output_size)
+
+        return self.forcePredict(game_state, ship_state)
 
     def replay(self, batch_size):
         logging.debug("Training")
@@ -103,11 +127,11 @@ class Cattle:
 
             game_state_batch.append(game_state)
             ship_state_batch.append(ship_state)
-            targets[i] = self.predict(game_state, ship_state, True)
+            targets[i] = self.forcePredict(game_state, ship_state)
             targets[i][action_taken] = reward
 
             if not done:
-                Q_sa = self.predict(next_game_state, next_ship_state, True)
+                Q_sa = self.forcePredict(next_game_state, next_ship_state)
                 estimated_reward = np.max(Q_sa)
                 targets[i][action_taken] = (reward + self.gamma * estimated_reward)
                 
