@@ -197,5 +197,5 @@ def doActionIndex(map, ship, actionIndex):
         angle = int(index/nbSpeedStep) * angleStep
         speed = int(index % nbSpeedStep) + 1
 
-        logging.debug("Thrusting: ship:%s, speed:%d, angle%d", ship, speed, angle)
+        logging.debug("Thrusting: ship:%s, speed:%d, angle:%d", ship, speed, angle)
         return ship.thrust(speed, angle)

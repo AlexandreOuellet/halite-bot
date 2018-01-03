@@ -71,12 +71,8 @@ try:
         for ship in game.map.get_me().all_ships():
             ship_state = nnutils.getShipState(ship)
             ship_action = cattle.predict(game_state, ship_state, ship, game_map)
-            logging.debug("ship_action: %s", ship_action)
 
             action_index = np.argmax(ship_action)
-            
-            logging.debug("action_index: %s", action_index)
-
 
             ship_action_dictionary[ship.id] = (ship_state, action_index)
             # cattle.remember(game_state, ship_state, ship_action, reward, ship_state, False)
@@ -88,11 +84,11 @@ try:
                 command_queue.append(command)
 
         game.send_command_queue(command_queue)
-        if (nbTurn % 25) == 0 and sys.argv[1] == 'G1':
-            cattle.saveMemory(MEMORY_FILENAME)
+        # if (nbTurn % 25) == 0 and sys.argv[1] == 'G1':
+        #     cattle.saveMemory(MEMORY_FILENAME)
 
 except Exception as e:
-    cattle.saveMemory(MEMORY_FILENAME)
+    # cattle.saveMemory(MEMORY_FILENAME)
 
     # logging.debug(e)
     try:

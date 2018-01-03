@@ -104,28 +104,34 @@ class Cattle:
 
     def predict(self, game_state, ship_state, ship, game_map):
         if np.random.rand() <= self.epsilon:
-            starter_action = starterBot.predict(ship, game_map)
-            logging.debug("starter_action: %s", starter_action)
-            index = nnutils.parseCommandToActionIndex(starter_action)
-            logging.debug("index: %s", index)
+            # starter_action = starterBot.predict(ship, game_map)
+            # logging.debug("starter_action: %s", starter_action)
+            # index = nnutils.parseCommandToActionIndex(starter_action)
+            # logging.debug("index: %s", index)
+            # actions = np.random.rand(self.output_size)
+            # if index == None:
+            #     actions[3] = 1
+            # else:
+            #     actions[index] = 1
+            # return actions
             actions = np.random.rand(self.output_size)
-            if index == None:
-                actions[3] = 1
-            else:
-                actions[index] = 1
+            # for planet in game_map.all_planets():
+            #     if ship.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
+            #         actions[0] = 1 # force dock if possible
+            logging.debug("Random action")
             return actions
-            # return np.random.rand(self.output_size)
 
-        return self.forcePredict(game_state, ship_state)
+        
+        actions = self.forcePredict(game_state, ship_state)
+        logging.debug("Predicted action : %s", actions)
+        return actions
 
     def replay(self, batch_size):
         print("Training")
-        import matplotlib.pyplot as plt
-
-
-        minBatchSize = batch_size
-        if (len(self.memory) < batch_size):
-            minBatchSize = len(self.memory)
+        
+        # minBatchSize = batch_size
+        # if (len(self.memory) < batch_size):
+        minBatchSize = len(self.memory)
 
         guylaine_inputs = np.zeros(shape=(1, self.guylaine_input_shape[0], self.guylaine_input_shape[1], self.guylaine_input_shape[2]))
         ship_input = np.zeros(shape=(1, self.ship_input_shape[0]))
@@ -155,16 +161,9 @@ class Cattle:
 
         print("Done gathering data for batch")
         if len(ship_state_batch) != 0:            
-            print("Fitting the model ", i)
-            history = self.model.fit({'guylaine_input': np.array(game_state_batch), 'ship_input': np.array(ship_state_batch)}, np.array(targets), batch_size=len(ship_state_batch), verbose=0, epochs=25)
+            print("Fitting the model")
+            history = self.model.fit({'guylaine_input': np.array(game_state_batch), 'ship_input': np.array(ship_state_batch)}, np.array(targets), batch_size=len(ship_state_batch), verbose=0, epochs=1)
             print("Done fitting the model, printing history")
-            
-
-            plt.plot(history.history['loss'])
-            plt.title('model loss')
-            plt.ylabel('loss')
-            plt.xlabel('epoch')
-            plt.show()
 
 
 
@@ -173,6 +172,7 @@ class Cattle:
             
         print("Training done.  epsilon: %s", self.epsilon)
         print("Training done.  epsilon: %s", self.epsilon)
+        return history.history['loss']
 
 
     def load(self):

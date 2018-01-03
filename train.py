@@ -3,6 +3,8 @@
 import os
 import nn.Cattle as Cattle
 import nnutils
+# import matplotlib.pyplot as plt
+import pylab
 
 SHIP_INPUT_SIZE = 4
 GUYLAINE_OUTPUT_SIZE = 100
@@ -14,10 +16,20 @@ CATTLE = Cattle.Cattle((13, nnutils.tileWidth, nnutils.tileHeight), (SHIP_INPUT_
 # guylaine.load()
 CATTLE.load()
 
+history_loss = []
+
 for file in os.listdir("./data/memory/"):
     fullFile = os.path.join("./data/memory/", file)
 
     CATTLE.loadMemory(fullFile)
-    CATTLE.replay(5)
+    losses = CATTLE.replay(300)
+    for loss in losses:
+        history_loss.append(loss)
     CATTLE.save()
     os.remove(fullFile)
+
+
+# plt.plot(history_loss)
+# plt.title('model loss')
+# plt.ylabel('loss')
+# plt.xlabel('epoch')
