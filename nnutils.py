@@ -13,14 +13,23 @@ nbAngleStep = int(360/angleStep) # How many angle steps we have
 speedStep = 2 # increments of 2 for speed
 nbSpeedStep = int(8/speedStep) # 1, 3, 5, 7
 
-def GetReward(map):
+def GetReward(map1, map2):
+    r2 = _getReward(map2)
+    r1 = _getReward(map1)
+    logging.debug("r1 %s",  r1)
+    logging.debug("r2 %s",  r2)
+    finalReward = r2 - r1
+    logging.debug("finalReward %s",  finalReward)
+
+    return finalReward
+
+def _getReward(map):
     myId = map.get_me().id
     totalShips = np.zeros(4)
     totalShipsHealth = np.zeros(4)
     productionSpeedPerPlayer = np.zeros(4)
 
     for planet in map.all_planets():
-        
         for dockedShip in planet.all_docked_ships():
             productionSpeedPerPlayer[planet.owner.id] += 1
 
@@ -29,21 +38,24 @@ def GetReward(map):
             totalShips[player.id] += 1
             totalShipsHealth[player.id] += ship.health
 
-    logging.debug(" np.sum(totalShips) %s",  np.sum(totalShips))
-    totalShipReward = totalShips[myId] - (np.sum(totalShips) - totalShips[myId])
-    shipHealthReward = totalShipsHealth[myId] - (np.sum(totalShipsHealth) - totalShipsHealth[myId]) 
+    nbShips = np.sum(totalShips)
+    totalShipReward = (totalShips[myId] - (nbShips - totalShips[myId])) / nbShips
+
+    nbShipHealth = np.sum(totalShipsHealth)
+    shipHealthReward = (totalShipsHealth[myId] - (nbShipHealth - totalShipsHealth[myId])) / nbShipHealth
 
     productionSpeedReward = np.sum(productionSpeedPerPlayer)
     if productionSpeedReward != 0:
-        productionSpeedReward = productionSpeedPerPlayer[myId] - (productionSpeedReward - productionSpeedPerPlayer[myId]) 
+        productionSpeedReward = (productionSpeedPerPlayer[myId] - (productionSpeedReward - productionSpeedPerPlayer[myId]) ) / productionSpeedReward
 
 
     logging.debug("totalShipReward %s",  totalShipReward)
     logging.debug("shipHealthReward %s",  shipHealthReward)
     logging.debug("productionSpeedReward %s",  productionSpeedReward)
 
+    totalReward = (totalShipReward + shipHealthReward + productionSpeedReward) / 3.0
 
-    return (totalShipReward + shipHealthReward + productionSpeedReward) / 3.0
+    return totalReward
 
     # average = np.average((totalShipReward, shipHealthReward, productionSpeedReward))
     # return average

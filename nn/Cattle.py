@@ -115,9 +115,9 @@ class Cattle:
             #     actions[index] = 1
             # return actions
             actions = np.random.rand(self.output_size)
-            # for planet in game_map.all_planets():
-            #     if ship.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
-            #         actions[0] = 1 # force dock if possible
+            for planet in game_map.all_planets():
+                if ship.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
+                    actions[0] = 1 # force dock if possible
             logging.debug("Random action")
             return actions
 
@@ -164,8 +164,6 @@ class Cattle:
             print("Fitting the model")
             history = self.model.fit({'guylaine_input': np.array(game_state_batch), 'ship_input': np.array(ship_state_batch)}, np.array(targets), batch_size=len(ship_state_batch), verbose=0, epochs=1)
             print("Done fitting the model, printing history")
-
-
 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay

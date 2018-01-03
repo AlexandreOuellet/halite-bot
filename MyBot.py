@@ -4,6 +4,7 @@ and play the game
 """
 import time
 import sys
+import copy
 
 MEMORY_FILENAME = str(time.time() * 1000)
 
@@ -24,7 +25,8 @@ try:
     # import nn.GuylaineV2 as GuylaineV2
     import nn.Cattle as Cattle
 
-    game_state = nnutils.Observe(game.map)
+    game_map = game.map
+    game_state = nnutils.Observe(game_map)
 
     ship_input_size = 4
     guylaine_output_size = 100
@@ -46,18 +48,18 @@ try:
         # TURN START
         # Update the map for the new turn and get the latest version
         oldState = np.copy(game_state)
+        old_map = copy.deepcopy(game_map)
         game_map = game.update_map()
         nbTurn += 1
         game_state = nnutils.Observe(game_map)
 
-        reward = nnutils.GetReward(game_map)
-        logging.debug("Reward: %s", reward)
-
+        if (old_map and game_map):
+            reward = nnutils.GetReward(old_map, game_map)
 
         if ship_action_dictionary != None:
             for key in ship_action_dictionary.keys():
                 ship_state, action_taken = ship_action_dictionary[key]
-                ship = game.map.get_me().get_ship(key)
+                ship = game_map.get_me().get_ship(key)
 
 
                 if ship != None:
@@ -68,7 +70,7 @@ try:
         command_queue = []
 
 
-        for ship in game.map.get_me().all_ships():
+        for ship in game_map.get_me().all_ships():
             ship_state = nnutils.getShipState(ship)
             ship_action = cattle.predict(game_state, ship_state, ship, game_map)
 
