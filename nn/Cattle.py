@@ -40,6 +40,24 @@ with RedirectStdStreams(stdout=devnull, stderr=devnull):
 
     import time
     import logging
+    from keras.callbacks import Callback
+
+class EarlyStoppingByLoss(Callback):
+    def __init__(self, monitor='loss', value=0.00001, verbose=1):
+        super(Callback, self).__init__()
+        self.monitor = monitor
+        self.value = value
+        self.verbose = verbose
+
+    def on_epoch_end(self, epoch, logs={}):
+        current = logs.get(self.monitor)
+        if current is None:
+            warnings.warn("Early stopping requires %s available!" % self.monitor, RuntimeWarning)
+
+        if current < self.value:
+            if self.verbose > 0:
+                print("Epoch %05d: early stopping THR" % epoch)
+            self.model.stop_training = True
 
 EPISODES = 1000
 
@@ -162,7 +180,9 @@ class Cattle:
         print("Done gathering data for batch")
         if len(ship_state_batch) != 0:            
             print("Fitting the model")
-            history = self.model.fit({'guylaine_input': np.array(game_state_batch), 'ship_input': np.array(ship_state_batch)}, np.array(targets), batch_size=len(ship_state_batch), verbose=0, epochs=1)
+            callbacks = [EarlyStoppingByLoss(monitor='loss', value=0.001, verbose=1)]
+
+            history = self.model.fit({'guylaine_input': np.array(game_state_batch), 'ship_input': np.array(ship_state_batch)}, np.array(targets), batch_size=len(ship_state_batch), verbose=1, epochs=50, callbacks=callbacks)
             print("Done fitting the model, printing history")
 
         if self.epsilon > self.epsilon_min:
