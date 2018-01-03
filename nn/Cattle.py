@@ -1,31 +1,45 @@
-import random
-import numpy as np
-from collections import deque
-
-import tensorflow as tf
 import os
-#disable warning of tensorflow
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '99'
-
-from contextlib import redirect_stdout
-with open('help.txt', 'w') as f:
-    with redirect_stdout(f):
-        import keras
-        from keras.models import Sequential, Model
-        from keras.layers import Dense, Input, Embedding, Conv2D, Flatten, Activation, MaxPooling2D
-        from keras.optimizers import Adam
-        from keras.utils import to_categorical, plot_model
+import sys
 
 
-import nnutils
+class RedirectStdStreams(object):
+    def __init__(self, stdout=None, stderr=None):
+        self._stdout = stdout or sys.stdout
+        self._stderr = stderr or sys.stderr
 
-import logging
-import pickle
-import os.path
+    def __enter__(self):
+        self.old_stdout, self.old_stderr = sys.stdout, sys.stderr
+        self.old_stdout.flush(); self.old_stderr.flush()
+        sys.stdout, sys.stderr = self._stdout, self._stderr
 
-import time
-from nn import starterBot
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._stdout.flush(); self._stderr.flush()
+        sys.stdout = self.old_stdout
+        sys.stderr = self.old_stderr
 
+devnull = open(os.devnull, 'w')
+
+with RedirectStdStreams(stdout=devnull, stderr=devnull):
+    import random
+    import numpy as np
+    from collections import deque
+
+    import tensorflow as tf
+
+
+    import keras
+    from keras.models import Sequential, Model
+    from keras.layers import Dense, Input, Embedding, Conv2D, Flatten, Activation, MaxPooling2D
+    from keras.optimizers import Adam
+    from keras.utils import to_categorical, plot_model
+    from nn import starterBot
+    import nnutils
+
+    import pickle
+    import os.path
+
+    import time
+    import logging
 
 EPISODES = 1000
 
@@ -48,10 +62,10 @@ class Cattle:
         # Neural Net for Deep-Q learning Model
         guylaine_input = Input(shape=(self.guylaine_input_shape[0], self.guylaine_input_shape[1], self.guylaine_input_shape[2]), name='guylaine_input')
         guylaine = Conv2D(32, (3, 3), name='guylaine_conv1', activation='relu')(guylaine_input)
-        guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool1')(guylaine)
+        # guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool1')(guylaine)
 
         guylaine = Conv2D(32, (3, 3), name='guylaine_conv2', activation='relu')(guylaine)
-        guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool2')(guylaine)
+        # guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool2')(guylaine)
 
         # model.add(Convolution2D(64, (3, 3), name='conv3', data_format="channels_last"))
         # model.add(Activation('relu'))
@@ -105,11 +119,13 @@ class Cattle:
         return self.forcePredict(game_state, ship_state)
 
     def replay(self, batch_size):
-        logging.debug("Training")
+        print("Training")
+        import matplotlib.pyplot as plt
 
-        minBatchSize = len(self.memory)
-        # if (len(self.memory) < batch_size):
-        #     minBatchSize = len(self.memory)
+
+        minBatchSize = batch_size
+        if (len(self.memory) < batch_size):
+            minBatchSize = len(self.memory)
 
         guylaine_inputs = np.zeros(shape=(1, self.guylaine_input_shape[0], self.guylaine_input_shape[1], self.guylaine_input_shape[2]))
         ship_input = np.zeros(shape=(1, self.ship_input_shape[0]))
@@ -122,7 +138,7 @@ class Cattle:
         targets = np.zeros((len(minibatch), self.output_size))
 
         for i in range(0, len(minibatch)):
-            logging.debug("Gathering data for batch i:%s", i)
+            print("Gathering data for batch i:%s", i)
             game_state, ship_state, action_taken, reward, next_game_state, next_ship_state, done = minibatch[i]
 
             game_state_batch.append(game_state)
@@ -137,17 +153,25 @@ class Cattle:
                 
             # y_batch.append(target)
 
-        logging.debug("Done gathering data for batch")
-        if len(ship_state_batch) != 0:
+        print("Done gathering data for batch")
+        if len(ship_state_batch) != 0:            
+            print("Fitting the model ", i)
+            history = self.model.fit({'guylaine_input': np.array(game_state_batch), 'ship_input': np.array(ship_state_batch)}, np.array(targets), batch_size=len(ship_state_batch), verbose=0, epochs=25)
+            print("Done fitting the model, printing history")
             
-            logging.debug("Fitting the model")
-            self.model.fit({'guylaine_input': np.array(game_state_batch), 'ship_input': np.array(ship_state_batch)}, np.array(targets), batch_size=len(ship_state_batch), verbose=0)
-            logging.debug("Done fitting the model")
+
+            plt.plot(history.history['loss'])
+            plt.title('model loss')
+            plt.ylabel('loss')
+            plt.xlabel('epoch')
+            plt.show()
+
+
 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
             
-        logging.debug("Training done.  epsilon: %s", self.epsilon)
+        print("Training done.  epsilon: %s", self.epsilon)
         print("Training done.  epsilon: %s", self.epsilon)
 
 
@@ -168,8 +192,6 @@ class Cattle:
             self.memory = pickle.load(open(fileName, 'rb'))
 
 
-    def saveMemory(self):
-        millis = int(round(time.time() * 1000))
-        pickle.dump(self.memory, open('./data/memory/' + str(millis), 'wb'))
-
-
+    def saveMemory(self, fileName):
+        logging.debug("Saving Memory of length %s", len(self.memory))
+        pickle.dump(self.memory, open('./data/memory/' + fileName, 'wb'))

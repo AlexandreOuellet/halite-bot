@@ -1,16 +1,11 @@
 """
-Welcome to your first Halite-II bot!
-
-This bot's name is Guylaine. It's purpose is simple (don't expect it to win complex games :) ):
-1. Initialize game
-2. If a ship is not docked and there are unowned planets
-2.a. Try to Dock in the planet if close enough
-2.b If not, go towards the planet
-
-Note: Please do not place print statements here as they are used to communicate with the Halite engine. If you need
-to log anything use the logging module.
+Main function for halite.  Essentially creates a memory files, attempt to dump anything/everything to it,
+and play the game
 """
+import time
+import sys
 
+MEMORY_FILENAME = str(time.time() * 1000)
 
 nbTurn = 0
 try:
@@ -21,17 +16,6 @@ try:
     # GAME START
     # Here we define the bot's name as Guylaine and initialize the game, including communication with the Halite engine.
     game = hlt.Game("Guylaine")
-
-    import tensorflow as tf
-
-
-    import os
-    #disable warning of tensorflow
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '99'
-    tf.logging.set_verbosity(tf.logging.ERROR)
-
-    import pickle
-    # Then let's import the logging module so we can print out information
     
     import nnutils
     import game as g
@@ -47,7 +31,7 @@ try:
     cattle_output_size = 3 + nnutils.nbAngleStep * nnutils.nbSpeedStep # dock/undock/nothing
     logging.debug("cattle_output_size: %s", cattle_output_size)
     # guylaine = GuylaineV2.GuylaineV2(nnutils.tileWidth, nnutils.tileHeight, len(state), guylaine_output_size, 'data/GuylaineV2' + sys.argv[1])
-    cattle = Cattle.Cattle((14, nnutils.tileWidth, nnutils.tileHeight), (ship_input_size,), cattle_output_size, 'data/Cattle')
+    cattle = Cattle.Cattle((13, nnutils.tileWidth, nnutils.tileHeight), (ship_input_size,), cattle_output_size, 'data/Cattle')
     # guylaine_output = guylaine.act(state)
 
     # guylaine.load()
@@ -104,16 +88,21 @@ try:
                 command_queue.append(command)
 
         game.send_command_queue(command_queue)
+        if (nbTurn % 25) == 0 and sys.argv[1] == 'G1':
+            cattle.saveMemory(MEMORY_FILENAME)
 
 except Exception as e:
+    cattle.saveMemory(MEMORY_FILENAME)
+
+    # logging.debug(e)
     try:
         logging.exception(str(e))
+        cattle.saveMemory(MEMORY_FILENAME)
         # if nbTurn != 0 and sys.argv[1] == 'G1':
         #     # guylaine.save()
         #     # cattle.replay(nbTurn)
-        #     cattle.saveMemory()
+        # cattle.saveMemory()
 
             # guylaine.replay(nbTurn)
     except Exception as f:
         logging.exception(str(f))
-    # traceback.print_exc()

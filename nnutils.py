@@ -2,6 +2,7 @@ import hlt
 import logging
 import numpy as np
 import string
+import math
 
 # the world seems to always be a ratio of 24x16
 tileWidth = 320
@@ -58,7 +59,6 @@ def _calculateAverage(myId, toCalculate):
         totalNb += toCalculate[playerId]
 
 def Observe(map):
-    
     planetsStates = discretizePlanets(map)
     shipsStates = discretizedShips(map)
 
@@ -82,37 +82,46 @@ def Observe(map):
     return states
 
 def discretizePlanets(map):
-    # planetsRadius = np.zeros(tileWidth * tileHeight)
-    planetsRadius = np.ndarray(shape=(tileWidth, tileHeight))
     planetsNumDockingSpots = np.ndarray(shape=(tileWidth, tileHeight))
     planetsCurrentProduction = np.ndarray(shape=(tileWidth, tileHeight))
     planetsRemainingResources = np.ndarray(shape=(tileWidth, tileHeight))
     planetsOwner = np.ndarray(shape=(tileWidth, tileHeight))
     planetsHealth = np.ndarray(shape=(tileWidth, tileHeight))
 
+    planetsNumDockingSpots.fill(0)
+    planetsCurrentProduction.fill(0)
+    planetsRemainingResources.fill(0)
+    planetsOwner.fill(0)
+    planetsHealth.fill(0)
+
     planets = map.all_planets()
     for planet in planets:
         # tileIndex = mapToArrayIndex(planet.x, planet.y)
-        planetsRadius[int(planet.x)][int(planet.y)] = planet.radius
-        planetsNumDockingSpots[int(planet.x)][int(planet.y)] = planet.num_docking_spots
-        planetsCurrentProduction[int(planet.x)][int(planet.y)] = planet.current_production
-        planetsRemainingResources[int(planet.x)][int(planet.y)] = planet.remaining_resources
+        planetsNumDockingSpots = drawPlanet([planet.x, planet.y], planet.radius, planetsNumDockingSpots, planet.num_docking_spots)
+        planetsCurrentProduction = drawPlanet([planet.x, planet.y], planet.radius, planetsCurrentProduction, planet.current_production)
+        planetsRemainingResources = drawPlanet([planet.x, planet.y], planet.radius, planetsRemainingResources, planet.remaining_resources)
         if planet.owner != None:
-            planetsOwner[int(planet.x)][int(planet.y)] = planet.owner.id
-        planetsHealth[int(planet.x)][int(planet.y)] = planet.health
+            planetsOwner = drawPlanet([planet.x, planet.y], planet.radius, planetsOwner, planet.owner.id)
+        # planetsHealth[int(planet.x)][int(planet.y)] = planet.health
+        planetsHealth = drawPlanet([planet.x, planet.y], planet.radius, planetsHealth, planet.health)
 
-        # planetsDockedShipPlayer1[tileIndex] = [None] * tileWidth * tileHeight
-        # planetsDockedShipPlayer2[tileIndex] = [None] * tileWidth * tileHeight
-        # planetsDockedShipPlayer3[tileIndex] = [None] * tileWidth * tileHeight
-        # planetsDockedShipPlayer4[tileIndex] = [None] * tileWidth * tileHeight
+    return planetsNumDockingSpots, planetsCurrentProduction, planetsRemainingResources, planetsOwner, planetsHealth
 
-
-    return planetsRadius, planetsNumDockingSpots, planetsCurrentProduction,planetsRemainingResources,planetsOwner,planetsHealth
+def drawPlanet(planetCenter, radius, toModify, value):
+    # draw the circle
+    for angle in range(0, 360, 5):
+        x = radius * math.sin(math.radians(angle)) + planetCenter[0]
+        y = radius * math.cos(math.radians(angle)) + planetCenter[1]
+        toModify[int(round(x))][int(round(y))] = value
+    return toModify
 
 def discretizedShips(map):
     # shipsPlayer1Present = [None] * tileWidth * tileHeight
     shipsPlayerHealth = np.ndarray(shape=(4, tileWidth, tileHeight))
     shipsPlayerDockingStatus = np.ndarray(shape=(4, tileWidth, tileHeight))
+
+    shipsPlayerHealth.fill(0)
+    shipsPlayerDockingStatus.fill(0)
 
     # for i in range(0, 4):
     #     shipsPlayerHealth[i] = np.zeros(shape=(tileWidth, tileHeight))
