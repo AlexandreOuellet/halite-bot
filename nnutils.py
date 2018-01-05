@@ -98,12 +98,16 @@ def discretizePlanets(map):
     planetsCurrentProduction = np.ndarray(shape=(tileWidth, tileHeight))
     planetsRemainingResources = np.ndarray(shape=(tileWidth, tileHeight))
     planetsOwner = np.ndarray(shape=(tileWidth, tileHeight))
+    myPlanets = np.ndarray(shape=(tileWidth, tileHeight))
     planetsHealth = np.ndarray(shape=(tileWidth, tileHeight))
 
     planetsNumDockingSpots.fill(0)
     planetsCurrentProduction.fill(0)
     planetsRemainingResources.fill(0)
     planetsOwner.fill(0)
+    myPlanets.fill(0)
+    logging.debug("myPlanets")
+    logging.debug(myPlanets)
     planetsHealth.fill(0)
 
     planets = map.all_planets()
@@ -114,10 +118,14 @@ def discretizePlanets(map):
         planetsRemainingResources = drawPlanet([planet.x, planet.y], planet.radius, planetsRemainingResources, planet.remaining_resources)
         if planet.owner != None:
             planetsOwner = drawPlanet([planet.x, planet.y], planet.radius, planetsOwner, planet.owner.id)
+            if planet.owner.id == map.get_me().id:
+                myPlanets = drawPlanet([planet.x, planet.y], planet.radius, myPlanets, 1)
         # planetsHealth[int(planet.x)][int(planet.y)] = planet.health
         planetsHealth = drawPlanet([planet.x, planet.y], planet.radius, planetsHealth, planet.health)
 
-    return planetsNumDockingSpots, planetsCurrentProduction, planetsRemainingResources, planetsOwner, planetsHealth
+    planetsOwner = _swapArrays(map.get_me().id, 0, planetsOwner)
+
+    return planetsNumDockingSpots, planetsCurrentProduction, planetsRemainingResources, planetsOwner, planetsHealth, myPlanets
 
 def drawPlanet(planetCenter, radius, toModify, value):
     # draw the circle

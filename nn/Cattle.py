@@ -42,22 +42,22 @@ with RedirectStdStreams(stdout=devnull, stderr=devnull):
     import logging
     from keras.callbacks import Callback
 
-class EarlyStoppingByLoss(Callback):
-    def __init__(self, monitor='loss', value=0.00001, verbose=1):
-        super(Callback, self).__init__()
-        self.monitor = monitor
-        self.value = value
-        self.verbose = verbose
+# class EarlyStop(Callback):
+#     def __init__(self, monitor='loss', value=0.0021, verbose=1):
+#         super(Callback, self).__init__()
+#         self.monitor = monitor
+#         self.value = value
+#         self.verbose = verbose
 
-    def on_epoch_end(self, epoch, logs={}):
-        current = logs.get(self.monitor)
-        if current is None:
-            warnings.warn("Early stopping requires %s available!" % self.monitor, RuntimeWarning)
+#     def on_epoch_end(self, epoch, logs={}):
+#         current = logs.get(self.monitor)
+#         if current is None:
+#             warnings.warn("Early stopping requires %s available!" % self.monitor, RuntimeWarning)
 
-        if current < self.value:
-            if self.verbose > 0:
-                print("Epoch %05d: early stopping THR" % epoch)
-            self.model.stop_training = True
+#         if current < self.value:
+#             if self.verbose > 0:
+#                 print("Epoch %05d: early stopping THR" % epoch)
+#             self.model.stop_training = True
 
 EPISODES = 1000
 
@@ -80,10 +80,10 @@ class Cattle:
         # Neural Net for Deep-Q learning Model
         guylaine_input = Input(shape=(self.guylaine_input_shape[0], self.guylaine_input_shape[1], self.guylaine_input_shape[2]), name='guylaine_input')
         guylaine = Conv2D(32, (3, 3), name='guylaine_conv1', activation='relu')(guylaine_input)
-        # guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool1')(guylaine)
+        guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool1')(guylaine)
 
         guylaine = Conv2D(32, (3, 3), name='guylaine_conv2', activation='relu')(guylaine)
-        # guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool2')(guylaine)
+        guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool2')(guylaine)
 
         # model.add(Convolution2D(64, (3, 3), name='conv3', data_format="channels_last"))
         # model.add(Activation('relu'))
@@ -109,8 +109,8 @@ class Cattle:
         model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
         return model
 
-    def remember(self, game_state, ship_state, action, reward, next_game_state, next_ship_state, done):
-        self.memory.append((game_state, ship_state, action, reward, next_game_state, next_ship_state, done))
+    def remember(self, game_state, ship_state, action, next_reward, next_game_state, next_ship_state, done):
+        self.memory.append((game_state, ship_state, action, next_reward, next_game_state, next_ship_state, done))
 
     def forcePredict(self,game_state, ship_state):
         game_state = game_state.reshape(1, game_state.shape[0], game_state.shape[1], game_state.shape[2])
@@ -122,73 +122,79 @@ class Cattle:
 
     def predict(self, game_state, ship_state, ship, game_map):
         if np.random.rand() <= self.epsilon:
-            # starter_action = starterBot.predict(ship, game_map)
-            # logging.debug("starter_action: %s", starter_action)
-            # index = nnutils.parseCommandToActionIndex(starter_action)
-            # logging.debug("index: %s", index)
-            # actions = np.random.rand(self.output_size)
-            # if index == None:
-            #     actions[3] = 1
-            # else:
-            #     actions[index] = 1
-            # return actions
+            # starter bot
+            starter_action = starterBot.predict(ship, game_map)
+            logging.debug("starter_action: %s", starter_action)
+            index = nnutils.parseCommandToActionIndex(starter_action)
+            logging.debug("index: %s", index)
             actions = np.random.rand(self.output_size)
-            for planet in game_map.all_planets():
-                if ship.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
-                    actions[0] = 1 # force dock if possible
+            if index == None:
+                actions[3] = 1
+            else:
+                actions[index] = 1
+            
+            # random action
+            # actions = np.random.rand(self.output_size)
+
+            # Force docking
+            # for planet in game_map.all_planets():
+            #     if ship.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
+            #         actions[0] = 1 # force dock if possible
+            #         logging.debug("Forced dock")
+            action_index = np.argmax(actions)
+            logging.debug("action_index: %s", action_index)
+            for index in range(0, len(actions)):
+                actions[index] = 0
+
+            actions[action_index] = 1
             logging.debug("Random action")
             return actions
 
         
         actions = self.forcePredict(game_state, ship_state)
+        action_index = np.argmax(actions)
+        actions[0][action_index-1] = 1
         logging.debug("Predicted action : %s", actions)
         return actions
 
-    def replay(self, batch_size):
+    def replay(self, batch_size, epoch):
         print("Training")
-        
-        # minBatchSize = batch_size
-        # if (len(self.memory) < batch_size):
-        minBatchSize = len(self.memory)
 
         guylaine_inputs = np.zeros(shape=(1, self.guylaine_input_shape[0], self.guylaine_input_shape[1], self.guylaine_input_shape[2]))
         ship_input = np.zeros(shape=(1, self.ship_input_shape[0]))
 
-        minibatch = random.sample(self.memory, minBatchSize)
-
         game_state_batch = []
         ship_state_batch = []
 
-        targets = np.zeros((len(minibatch), self.output_size))
+        targets = np.zeros((len(self.memory), self.output_size))
 
-        for i in range(0, len(minibatch)):
+        for i in range(0, len(self.memory)):
             print("Gathering data for batch i:%s", i)
-            game_state, ship_state, action_taken, reward, next_game_state, next_ship_state, done = minibatch[i]
+            game_state, ship_state, action_taken, next_reward, next_game_state, next_ship_state, done = self.memory[i]
 
             game_state_batch.append(game_state)
             ship_state_batch.append(ship_state)
-            targets[i] = self.forcePredict(game_state, ship_state)
-            targets[i][action_taken] = reward
 
-            if not done:
-                Q_sa = self.forcePredict(next_game_state, next_ship_state)
-                estimated_reward = np.max(Q_sa)
-                targets[i][action_taken] = (reward + self.gamma * estimated_reward)
-                
-            # y_batch.append(target)
+            targets[i] = self.forcePredict(game_state, ship_state)
+
+            # First, predict the Q values of the next states. Note how we are passing ones as the mask.
+            next_Q_values = self.forcePredict(next_game_state, next_ship_state)
+
+            # The Q values of each start state is the reward + gamma * the max next state Q value
+            targets[i][action_taken] = next_reward + self.gamma * np.max(next_Q_values)
+
 
         print("Done gathering data for batch")
         if len(ship_state_batch) != 0:            
             print("Fitting the model")
-            callbacks = [EarlyStoppingByLoss(monitor='loss', value=0.001, verbose=1)]
+            # callbacks = [EarlyStop(monitor='loss', value=0.0021, verbose=1)]
 
-            history = self.model.fit({'guylaine_input': np.array(game_state_batch), 'ship_input': np.array(ship_state_batch)}, np.array(targets), batch_size=len(ship_state_batch), verbose=1, epochs=50, callbacks=callbacks)
+            history = self.model.fit({'guylaine_input': np.array(game_state_batch), 'ship_input': np.array(ship_state_batch)}, np.array(targets), batch_size=batch_size, verbose=1, epochs=epoch)
             print("Done fitting the model, printing history")
 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
             
-        print("Training done.  epsilon: %s", self.epsilon)
         print("Training done.  epsilon: %s", self.epsilon)
         return history.history['loss']
 
@@ -196,10 +202,9 @@ class Cattle:
     def load(self):
         if os.path.isfile('./data/model'):
             self.model.load_weights('./data/model')
-        # if os.path.isfile(self.name + '_memory'):
-        #     self.memory = pickle.load(open(self.name + '_memory', 'rb'))
         if os.path.isfile('./data/epsilon'):
             self.epsilon = pickle.load(open('./data/epsilon', 'rb'))
+            # self.epsilon = 0
 
     def save(self):
         self.model.save_weights('./data/model')

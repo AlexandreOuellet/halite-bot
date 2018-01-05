@@ -5,6 +5,8 @@ and play the game
 import time
 import sys
 import copy
+import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1' 
 
 MEMORY_FILENAME = str(time.time() * 1000)
 
@@ -33,7 +35,7 @@ try:
     cattle_output_size = 3 + nnutils.nbAngleStep * nnutils.nbSpeedStep # dock/undock/nothing
     logging.debug("cattle_output_size: %s", cattle_output_size)
     # guylaine = GuylaineV2.GuylaineV2(nnutils.tileWidth, nnutils.tileHeight, len(state), guylaine_output_size, 'data/GuylaineV2' + sys.argv[1])
-    cattle = Cattle.Cattle((13, nnutils.tileWidth, nnutils.tileHeight), (ship_input_size,), cattle_output_size, 'data/Cattle')
+    cattle = Cattle.Cattle((14, nnutils.tileWidth, nnutils.tileHeight), (ship_input_size,), cattle_output_size, 'data/Cattle')
     # guylaine_output = guylaine.act(state)
 
     # guylaine.load()
@@ -58,14 +60,14 @@ try:
 
         if ship_action_dictionary != None:
             for key in ship_action_dictionary.keys():
-                ship_state, action_taken = ship_action_dictionary[key]
+                old_ship_state, action_taken = ship_action_dictionary[key]
                 ship = game_map.get_me().get_ship(key)
 
 
                 if ship != None:
                     next_ship_state = nnutils.getShipState(ship) 
                 
-                    cattle.remember(oldState, ship_state, action_taken, reward, game_state, next_ship_state, ship != None)
+                    cattle.remember(oldState, old_ship_state, action_taken, reward, game_state, next_ship_state, ship != None)
         
         command_queue = []
 
@@ -77,7 +79,6 @@ try:
             action_index = np.argmax(ship_action)
 
             ship_action_dictionary[ship.id] = (ship_state, action_index)
-            # cattle.remember(game_state, ship_state, ship_action, reward, ship_state, False)
 
             command = nnutils.doActionIndex(game_map, ship, action_index)
             logging.debug(command)
