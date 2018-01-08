@@ -18,7 +18,10 @@ try:
 
     # GAME START
     # Here we define the bot's name as Guylaine and initialize the game, including communication with the Halite engine.
-    game = hlt.Game("Guylaine")
+    if sys.argv[1] == 'G1':
+        game = hlt.Game("Guylaine")
+    else:
+        game = hlt.Game("Starterbot")
     
     import nnutils
     import game as g
@@ -26,6 +29,7 @@ try:
 
     # import nn.GuylaineV2 as GuylaineV2
     import nn.Cattle as Cattle
+    from nn import starterBot
 
     game_map = game.map
     game_state = nnutils.Observe(game_map)
@@ -35,11 +39,15 @@ try:
     cattle_output_size = 3 + nnutils.nbAngleStep * nnutils.nbSpeedStep # dock/undock/nothing
     logging.debug("cattle_output_size: %s", cattle_output_size)
     # guylaine = GuylaineV2.GuylaineV2(nnutils.tileWidth, nnutils.tileHeight, len(state), guylaine_output_size, 'data/GuylaineV2' + sys.argv[1])
-    cattle = Cattle.Cattle((14, nnutils.tileWidth, nnutils.tileHeight), (ship_input_size,), cattle_output_size, 'data/Cattle')
+    
+
+    if sys.argv[1] == 'G1':
+        cattle = Cattle.Cattle((14, nnutils.tileWidth, nnutils.tileHeight), (ship_input_size,), cattle_output_size, 'data/Cattle')
     # guylaine_output = guylaine.act(state)
 
     # guylaine.load()
-    cattle.load()
+    if sys.argv[1] == 'G1':
+        cattle.load()
 
     ship_state = np.array([120, 120, 255, 1])
     # output = cattle.predict(game_state, ship_state)
@@ -58,29 +66,35 @@ try:
         if (old_map and game_map):
             reward = nnutils.GetReward(old_map, game_map)
 
-        if ship_action_dictionary != None:
-            for key in ship_action_dictionary.keys():
-                old_ship_state, action_taken = ship_action_dictionary[key]
-                ship = game_map.get_me().get_ship(key)
+        if sys.argv[1] == 'G1':
+            if ship_action_dictionary != None:
+                for key in ship_action_dictionary.keys():
+                    old_ship_state, action_taken = ship_action_dictionary[key]
+                    ship = game_map.get_me().get_ship(key)
 
 
-                if ship != None:
-                    next_ship_state = nnutils.getShipState(ship) 
-                
-                    cattle.remember(oldState, old_ship_state, action_taken, reward, game_state, next_ship_state, ship != None)
-        
+                    if ship != None:
+                        next_ship_state = nnutils.getShipState(ship) 
+                    
+                        cattle.remember(oldState, old_ship_state, action_taken, reward, game_state, next_ship_state, ship != None)
+            
         command_queue = []
 
 
         for ship in game_map.get_me().all_ships():
             ship_state = nnutils.getShipState(ship)
-            ship_action = cattle.predict(game_state, ship_state, ship, game_map)
+            if sys.argv[1] == 'G1':
+                ship_action = cattle.predict(game_state, ship_state, ship, game_map)
 
-            action_index = np.argmax(ship_action)
 
-            ship_action_dictionary[ship.id] = (ship_state, action_index)
+                action_index = np.argmax(ship_action)
 
-            command = nnutils.doActionIndex(game_map, ship, action_index)
+                ship_action_dictionary[ship.id] = (ship_state, action_index)
+
+                command = nnutils.doActionIndex(game_map, ship, action_index)
+            else:
+                command = starterBot.predictStarterBot(ship, game_map)
+                logging.debug("Command: %s", command)
             logging.debug(command)
 
             if (command != None):
@@ -96,7 +110,8 @@ except Exception as e:
     # logging.debug(e)
     try:
         logging.exception(str(e))
-        cattle.saveMemory(MEMORY_FILENAME)
+        if sys.argv[1] == 'G1':
+            cattle.saveMemory(MEMORY_FILENAME)
         # if nbTurn != 0 and sys.argv[1] == 'G1':
         #     # guylaine.save()
         #     # cattle.replay(nbTurn)

@@ -1,7 +1,19 @@
 import hlt
 import logging
 
-def predict(ship, game_map):
+def load():
+    return 0
+
+def predict(game_state, ship_state, ship, game_map):
+    return predictStarterBot(ship, game_map)
+
+def remember(oldState, old_ship_state, action_taken, reward, game_state, next_ship_state, isTerminal):
+    return 0
+
+def saveMemory():
+    return 0
+
+def predictStarterBot(ship, game_map):
 
     if ship.docking_status != ship.DockingStatus.UNDOCKED:
         # Skip this ship

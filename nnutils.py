@@ -39,21 +39,21 @@ def _getReward(map):
             totalShipsHealth[player.id] += ship.health
 
     nbShips = np.sum(totalShips)
-    totalShipReward = (totalShips[myId] - (nbShips - totalShips[myId])) / nbShips
+    # totalShipReward = (totalShips[myId] - (nbShips - totalShips[myId])) / nbShips
+    totalShipReward = totalShips[myId] - (nbShips - totalShips[myId])
 
     nbShipHealth = np.sum(totalShipsHealth)
-    shipHealthReward = (totalShipsHealth[myId] - (nbShipHealth - totalShipsHealth[myId])) / nbShipHealth
+    shipHealthReward = totalShipsHealth[myId] - (nbShipHealth - totalShipsHealth[myId])
 
     productionSpeedReward = np.sum(productionSpeedPerPlayer)
     if productionSpeedReward != 0:
-        productionSpeedReward = (productionSpeedPerPlayer[myId] - (productionSpeedReward - productionSpeedPerPlayer[myId]) ) / productionSpeedReward
-
+        productionSpeedReward = productionSpeedPerPlayer[myId] - (productionSpeedReward - productionSpeedPerPlayer[myId])
 
     logging.debug("totalShipReward %s",  totalShipReward)
     logging.debug("shipHealthReward %s",  shipHealthReward)
     logging.debug("productionSpeedReward %s",  productionSpeedReward)
 
-    totalReward = (totalShipReward + shipHealthReward + productionSpeedReward) / 3.0
+    totalReward = totalShipReward + shipHealthReward + productionSpeedReward
 
     return totalReward
 

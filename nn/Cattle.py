@@ -68,7 +68,7 @@ class Cattle:
         self.guylaine_input_shape = guylaine_input_shape
         self.ship_input_shape = ship_input_shape
         self.output_size = output_size
-        self.memory = deque(maxlen=2000)
+        self.memory = deque()
         self.gamma = 0.95    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
@@ -102,7 +102,7 @@ class Cattle:
         cattle = Dense(64, activation='relu', name='cattle_dense1')(cattle)
         cattle = Dense(64, activation='relu', name='cattle_dense2')(cattle)
         cattle = Dense(64, activation='relu', name='cattle_dense3')(cattle)
-        ship_output = Dense(self.output_size, activation='sigmoid', name='cattle_output')(cattle)
+        ship_output = Dense(self.output_size, activation='relu', name='cattle_output')(cattle)
 
         model = Model(inputs=[guylaine_input, ship_input], outputs=ship_output)
 
@@ -123,24 +123,25 @@ class Cattle:
     def predict(self, game_state, ship_state, ship, game_map):
         if np.random.rand() <= self.epsilon:
             # starter bot
-            starter_action = starterBot.predict(ship, game_map)
-            logging.debug("starter_action: %s", starter_action)
-            index = nnutils.parseCommandToActionIndex(starter_action)
-            logging.debug("index: %s", index)
-            actions = np.random.rand(self.output_size)
-            if index == None:
-                actions[3] = 1
-            else:
-                actions[index] = 1
+            # starter_action = starterBot.predictStarterBot(ship, game_map)
+            # logging.debug("starter_action: %s", starter_action)
+            # index = nnutils.parseCommandToActionIndex(starter_action)
+            # logging.debug("index: %s", index)
+            # actions = np.random.rand(self.output_size)
+            # if index == None:
+            #     actions[3] = 1
+            # else:
+            #     actions[index] = 1
             
             # random action
-            # actions = np.random.rand(self.output_size)
+            actions = np.random.rand(self.output_size)
 
             # Force docking
-            # for planet in game_map.all_planets():
-            #     if ship.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
-            #         actions[0] = 1 # force dock if possible
-            #         logging.debug("Forced dock")
+            for planet in game_map.all_planets():
+                if ship.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
+                    actions[0] = 1 # force dock if possible
+                    logging.debug("Forced dock")
+
             action_index = np.argmax(actions)
             logging.debug("action_index: %s", action_index)
             for index in range(0, len(actions)):

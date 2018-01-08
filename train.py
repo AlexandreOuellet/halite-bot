@@ -35,7 +35,7 @@ for file in os.listdir("./data/memory/"):
     CATTLE.save()
     pickle.dump(history_losses, open('./data/loss_historyv2', 'wb'))
 
-    # os.remove(fullFile)
+    os.remove(fullFile)
 
 # plt.plot(history_losses)
 # plt.title('model loss')
