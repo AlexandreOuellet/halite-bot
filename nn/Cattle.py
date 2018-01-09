@@ -42,25 +42,7 @@ with RedirectStdStreams(stdout=devnull, stderr=devnull):
     import logging
     from keras.callbacks import Callback
 
-# class EarlyStop(Callback):
-#     def __init__(self, monitor='loss', value=0.0021, verbose=1):
-#         super(Callback, self).__init__()
-#         self.monitor = monitor
-#         self.value = value
-#         self.verbose = verbose
-
-#     def on_epoch_end(self, epoch, logs={}):
-#         current = logs.get(self.monitor)
-#         if current is None:
-#             warnings.warn("Early stopping requires %s available!" % self.monitor, RuntimeWarning)
-
-#         if current < self.value:
-#             if self.verbose > 0:
-#                 print("Epoch %05d: early stopping THR" % epoch)
-#             self.model.stop_training = True
-
 EPISODES = 1000
-
 
 class Cattle:
     def __init__(self, guylaine_input_shape, ship_input_shape, output_size, name):
@@ -69,7 +51,7 @@ class Cattle:
         self.ship_input_shape = ship_input_shape
         self.output_size = output_size
         self.memory = deque()
-        self.gamma = 0.95    # discount rate
+        self.gamma = 1    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.995
@@ -79,11 +61,14 @@ class Cattle:
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
         guylaine_input = Input(shape=(self.guylaine_input_shape[0], self.guylaine_input_shape[1], self.guylaine_input_shape[2]), name='guylaine_input')
-        guylaine = Conv2D(32, (3, 3), name='guylaine_conv1', activation='relu')(guylaine_input)
-        guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool1')(guylaine)
+        guylaine = Conv2D(32, (8, 8), name='guylaine_conv1', activation='relu')(guylaine_input)
+        # guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool1')(guylaine)
 
-        guylaine = Conv2D(32, (3, 3), name='guylaine_conv2', activation='relu')(guylaine)
-        guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool2')(guylaine)
+        guylaine = Conv2D(32, (4, 4), name='guylaine_conv2', activation='relu')(guylaine)
+        # guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool2')(guylaine)
+
+        guylaine = Conv2D(32, (3, 3), name='guylaine_conv3', activation='relu')(guylaine)
+        # guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool3')(guylaine)
 
         # model.add(Convolution2D(64, (3, 3), name='conv3', data_format="channels_last"))
         # model.add(Activation('relu'))
@@ -93,15 +78,15 @@ class Cattle:
 
         guylaine = Dense(512, name='guylaine_dense1', activation='relu')(guylaine)
 
-        guylaine_output = Dense(100, name='output', activation='sigmoid')(guylaine)
+        guylaine_output = Dense(100, name='output', activation='relu')(guylaine)
 
         ship_input = Input(shape=self.ship_input_shape, name='ship_input')
         
         cattle = keras.layers.concatenate([guylaine_output, ship_input])
 
-        cattle = Dense(64, activation='relu', name='cattle_dense1')(cattle)
-        cattle = Dense(64, activation='relu', name='cattle_dense2')(cattle)
-        cattle = Dense(64, activation='relu', name='cattle_dense3')(cattle)
+        cattle = Dense(512, activation='relu', name='cattle_dense1')(cattle)
+        cattle = Dense(512, activation='relu', name='cattle_dense2')(cattle)
+        cattle = Dense(512, activation='relu', name='cattle_dense3')(cattle)
         ship_output = Dense(self.output_size, activation='relu', name='cattle_output')(cattle)
 
         model = Model(inputs=[guylaine_input, ship_input], outputs=ship_output)
@@ -158,7 +143,8 @@ class Cattle:
         logging.debug("Predicted action : %s", actions)
         return actions
 
-    def replay(self, batch_size, epoch):
+    def replay(self, batch_size, epoch, strategy, run_name):
+        from keras.callbacks import TensorBoard
         print("Training")
 
         guylaine_inputs = np.zeros(shape=(1, self.guylaine_input_shape[0], self.guylaine_input_shape[1], self.guylaine_input_shape[2]))
@@ -188,17 +174,20 @@ class Cattle:
         print("Done gathering data for batch")
         if len(ship_state_batch) != 0:            
             print("Fitting the model")
-            # callbacks = [EarlyStop(monitor='loss', value=0.0021, verbose=1)]
+            # callbacks = [EarlyStop(monitor='loss', value=0.0021, verbose=1), TensorBoard(write_images=True, log_dir='./logs/'+strategy+'/'+filename]
+            tensor_log_file = str.format('./logs/{}/{}', strategy, run_name)
+            callback = TensorBoard(write_images=True, log_dir=tensor_log_file)
 
-            history = self.model.fit({'guylaine_input': np.array(game_state_batch), 'ship_input': np.array(ship_state_batch)}, np.array(targets), batch_size=batch_size, verbose=1, epochs=epoch)
+            history = self.model.fit({'guylaine_input': np.array(game_state_batch), 'ship_input': np.array(ship_state_batch)}, np.array(targets), batch_size=batch_size, verbose=1, epochs=epoch, callbacks=[callback])
             print("Done fitting the model, printing history")
+            print(history)
+            print(history.history)
 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
             
         print("Training done.  epsilon: %s", self.epsilon)
         return history.history['loss']
-
 
     def load(self):
         if os.path.isfile('./data/model'):

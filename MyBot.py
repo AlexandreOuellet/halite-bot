@@ -5,10 +5,23 @@ and play the game
 import time
 import sys
 import copy
+import pickle
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1' 
 
+
+def save(data, filename):
+    pickle.dump(data, open('./data/'+filename, 'wb'))
+
+def load(fileName):
+    if os.path.isfile(fileName):
+        return pickle.load(open('./data/'+fileName, 'rb'))
+    return []
+
 MEMORY_FILENAME = str(time.time() * 1000)
+
+REWARD_FILENAME = MEMORY_FILENAME+'_totalRewards'
+totalRewards = load(REWARD_FILENAME)
 
 nbTurn = 0
 try:
@@ -65,6 +78,7 @@ try:
 
         if (old_map and game_map):
             reward = nnutils.GetReward(old_map, game_map)
+            totalRewards.append(reward)
 
         if sys.argv[1] == 'G1':
             if ship_action_dictionary != None:
@@ -112,6 +126,7 @@ except Exception as e:
         logging.exception(str(e))
         if sys.argv[1] == 'G1':
             cattle.saveMemory(MEMORY_FILENAME)
+            save(totalRewards, REWARD_FILENAME)
         # if nbTurn != 0 and sys.argv[1] == 'G1':
         #     # guylaine.save()
         #     # cattle.replay(nbTurn)
