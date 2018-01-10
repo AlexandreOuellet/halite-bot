@@ -22,6 +22,9 @@ devnull = open(os.devnull, 'w')
 with RedirectStdStreams(stdout=devnull, stderr=devnull):
     import random
     import numpy as np
+    np.set_printoptions(threshold=np.nan)
+
+
     from collections import deque
 
     import tensorflow as tf
@@ -29,7 +32,7 @@ with RedirectStdStreams(stdout=devnull, stderr=devnull):
 
     import keras
     from keras.models import Sequential, Model
-    from keras.layers import Dense, Input, Embedding, Conv2D, Flatten, Activation, MaxPooling2D
+    from keras.layers import Dense, Input, Embedding, Conv2D, Flatten, Activation, MaxPooling2D, Dropout
     from keras.optimizers import Adam
     from keras.utils import to_categorical, plot_model
     from nn import starterBot
@@ -43,6 +46,7 @@ with RedirectStdStreams(stdout=devnull, stderr=devnull):
     from keras.callbacks import Callback
 
 EPISODES = 1000
+DROPOUT_RATE = 0.2
 
 class Cattle:
     def __init__(self, guylaine_input_shape, ship_input_shape, output_size, name):
@@ -51,7 +55,7 @@ class Cattle:
         self.ship_input_shape = ship_input_shape
         self.output_size = output_size
         self.memory = deque()
-        self.gamma = 1    # discount rate
+        self.gamma = 0.95    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.995
@@ -85,8 +89,11 @@ class Cattle:
         cattle = keras.layers.concatenate([guylaine_output, ship_input])
 
         cattle = Dense(512, activation='relu', name='cattle_dense1')(cattle)
+        cattle = Dropout(DROPOUT_RATE)(cattle)
         cattle = Dense(512, activation='relu', name='cattle_dense2')(cattle)
+        cattle = Dropout(DROPOUT_RATE)(cattle)
         cattle = Dense(512, activation='relu', name='cattle_dense3')(cattle)
+        cattle = Dropout(DROPOUT_RATE)(cattle)
         ship_output = Dense(self.output_size, activation='relu', name='cattle_output')(cattle)
 
         model = Model(inputs=[guylaine_input, ship_input], outputs=ship_output)
@@ -128,19 +135,24 @@ class Cattle:
                     logging.debug("Forced dock")
 
             action_index = np.argmax(actions)
-            logging.debug("action_index: %s", action_index)
-            for index in range(0, len(actions)):
-                actions[index] = 0
+            for i in range(0, len(actions)):
+                actions[i] = 0
 
             actions[action_index] = 1
-            logging.debug("Random action")
+
+            # actions = to_categorical(actions, num_classes=self.output_size)
+            # action_index = np.argmax(actions)
+
+            logging.debug("Random action : %s", actions)
+            logging.debug("Random action index : %d", action_index)
             return actions
 
         
         actions = self.forcePredict(game_state, ship_state)
         action_index = np.argmax(actions)
-        actions[0][action_index-1] = 1
+
         logging.debug("Predicted action : %s", actions)
+        logging.debug("Predicted action index : %d", action_index)
         return actions
 
     def replay(self, batch_size, epoch, strategy, run_name):
@@ -194,7 +206,7 @@ class Cattle:
             self.model.load_weights('./data/model')
         if os.path.isfile('./data/epsilon'):
             self.epsilon = pickle.load(open('./data/epsilon', 'rb'))
-            # self.epsilon = 0
+        # self.epsilon = 0
 
     def save(self):
         self.model.save_weights('./data/model')

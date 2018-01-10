@@ -7,6 +7,7 @@ import sys
 import copy
 import pickle
 import os
+import numpy
 os.environ['CUDA_VISIBLE_DEVICES'] = '-1' 
 
 
@@ -47,8 +48,8 @@ try:
     game_map = game.map
     game_state = nnutils.Observe(game_map)
 
-    ship_input_size = 4
-    guylaine_output_size = 100
+    ship_input_size = 5
+    guylaine_output_size = 320*240
     cattle_output_size = 3 + nnutils.nbAngleStep * nnutils.nbSpeedStep # dock/undock/nothing
     logging.debug("cattle_output_size: %s", cattle_output_size)
     # guylaine = GuylaineV2.GuylaineV2(nnutils.tileWidth, nnutils.tileHeight, len(state), guylaine_output_size, 'data/GuylaineV2' + sys.argv[1])
@@ -62,7 +63,7 @@ try:
     if sys.argv[1] == 'G1':
         cattle.load()
 
-    ship_state = np.array([120, 120, 255, 1])
+    ship_state = np.array([120, 120, 255, 1, 250])
     # output = cattle.predict(game_state, ship_state)
 
     ship_action_dictionary = {}
@@ -89,6 +90,7 @@ try:
 
                     if ship != None:
                         next_ship_state = nnutils.getShipState(ship) 
+                        next_ship_state = numpy.append(next_ship_state, nbTurn)
                     
                         cattle.remember(oldState, old_ship_state, action_taken, reward, game_state, next_ship_state, ship != None)
             
@@ -97,6 +99,7 @@ try:
 
         for ship in game_map.get_me().all_ships():
             ship_state = nnutils.getShipState(ship)
+            ship_state = numpy.append(ship_state, nbTurn)
             if sys.argv[1] == 'G1':
                 ship_action = cattle.predict(game_state, ship_state, ship, game_map)
 
@@ -114,6 +117,9 @@ try:
             if (command != None):
                 command_queue.append(command)
 
+        if sys.argv[1] != 'G1':
+            command_queue.clear()
+            
         game.send_command_queue(command_queue)
         # if (nbTurn % 25) == 0 and sys.argv[1] == 'G1':
         #     cattle.saveMemory(MEMORY_FILENAME)

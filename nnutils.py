@@ -8,17 +8,19 @@ import math
 tileWidth = 320
 tileHeight = 240
 
-angleStep = 15 # increments of 15 for angle
+angleStep = 90 # increments of 15 for angle
 nbAngleStep = int(360/angleStep) # How many angle steps we have
-speedStep = 2 # increments of 2 for speed
+speedStep = 8 # increments of 2 for speed
 nbSpeedStep = int(8/speedStep) # 1, 3, 5, 7
 
 def GetReward(map1, map2):
     r2 = _getReward(map2)
     r1 = _getReward(map1)
-    logging.debug("r1 %s",  r1)
-    logging.debug("r2 %s",  r2)
-    finalReward = r2 - r1
+    # logging.debug("r1 %s",  r1)
+    # logging.debug("r2 %s",  r2)
+    # finalReward = r2 - r1
+    finalReward = r1
+
     logging.debug("finalReward %s",  finalReward)
 
     return finalReward
@@ -38,16 +40,19 @@ def _getReward(map):
             totalShips[player.id] += 1
             totalShipsHealth[player.id] += ship.health
 
-    nbShips = np.sum(totalShips)
+    # nbShips = np.sum(totalShips)
     # totalShipReward = (totalShips[myId] - (nbShips - totalShips[myId])) / nbShips
-    totalShipReward = totalShips[myId] - (nbShips - totalShips[myId])
+    # totalShipReward = totalShips[myId] - (nbShips - totalShips[myId])
+    totalShipReward = totalShips[myId]
 
-    nbShipHealth = np.sum(totalShipsHealth)
-    shipHealthReward = totalShipsHealth[myId] - (nbShipHealth - totalShipsHealth[myId])
+    # nbShipHealth = np.sum(totalShipsHealth)
+    # shipHealthReward = totalShipsHealth[myId] - (nbShipHealth - totalShipsHealth[myId])
+    shipHealthReward = totalShipsHealth[myId] / (255)
 
     productionSpeedReward = np.sum(productionSpeedPerPlayer)
     if productionSpeedReward != 0:
-        productionSpeedReward = productionSpeedPerPlayer[myId] - (productionSpeedReward - productionSpeedPerPlayer[myId])
+        # productionSpeedReward = productionSpeedPerPlayer[myId] - (productionSpeedReward - productionSpeedPerPlayer[myId])
+        productionSpeedReward = productionSpeedPerPlayer[myId]
 
     logging.debug("totalShipReward %s",  totalShipReward)
     logging.debug("shipHealthReward %s",  shipHealthReward)
@@ -106,8 +111,6 @@ def discretizePlanets(map):
     planetsRemainingResources.fill(0)
     planetsOwner.fill(0)
     myPlanets.fill(0)
-    logging.debug("myPlanets")
-    logging.debug(myPlanets)
     planetsHealth.fill(0)
 
     planets = map.all_planets()

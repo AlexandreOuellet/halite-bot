@@ -9,8 +9,8 @@ import pickle
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1' 
 
-SHIP_INPUT_SIZE = 4
-GUYLAINE_OUTPUT_SIZE = 100
+SHIP_INPUT_SIZE = 5
+GUYLAINE_OUTPUT_SIZE = 320*240
 CATTLE_OUTPUT_SIZE = 3 + nnutils.nbAngleStep * nnutils.nbSpeedStep # dock/undock/nothing
 # guylaine = GuylaineV2.GuylainpeV2(nnutils.tileWidth, nnutils.tileHeight, len(state), guylaine_output_size, 'data/GuylaineV2' + sys.argv[1])
 CATTLE = Cattle.Cattle((14, nnutils.tileWidth, nnutils.tileHeight), (SHIP_INPUT_SIZE,), CATTLE_OUTPUT_SIZE, 'data/CattleG1')
@@ -28,7 +28,7 @@ for file in os.listdir("./data/memory/"):
     CATTLE.load()
 
     CATTLE.loadMemory(fullFile)
-    losses = (CATTLE.replay(128, 200, 'relu', file))
+    losses = (CATTLE.replay(128, 25, 'ReLuV2', file))
     for loss in losses:
         history_losses.append(loss)
 
