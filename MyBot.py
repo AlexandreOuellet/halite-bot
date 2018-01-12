@@ -40,12 +40,17 @@ try:
     cattle.load()
 
     command_queue = []
+    shipStateAction = []
 
     while True:
         command_queue.clear()
-        game_map = game.update_map()
+        old_map = copy.deepcopy(game_map)
 
+        # advance the simulation 1 step
+        game_map = game.update_map()
         nbTurn += 1
+
+        reward = nnutils.getReward(old_map, game_map)
 
         if len(sys.argv) == 1: # nullbot
             game.send_command_queue(command_queue)
@@ -58,15 +63,28 @@ try:
                 ship,
                 observations)
 
-            logging.debug(observations)
-            # cattle.remember(ship, ship_state, reward, next_state)
+            # logging.debug("observations")
+            # logging.debug("closestEmptyPlanets: %s", observations[nnutils.ObservationIndexes.closestEmptyPlanets.value])
+            # logging.debug("closestEnemyPlanets: %s", observations[nnutils.ObservationIndexes.closestEnemyPlanets.value])
+            # logging.debug("closestEnemyShips: %s", observations[nnutils.ObservationIndexes.closestEnemyShips.value])
+            # logging.debug("closestFriendlyShips: %s", observations[nnutils.ObservationIndexes.closestFriendlyShips.value])
+            # logging.debug("closestFriendlyPlanets: %s", observations[nnutils.ObservationIndexes.closestFriendlyPlanets.value])
+            # logging.debug("ship_state: %s", ship_state)
 
             actions = cattle.predict(ship_state, ship, game_map)
+
+            cattle.rememberNextState(ship.id, ship_state, actions, reward)
+
             command = nnutils.getCommand(game_map, ship, actions, observations)
+            logging.debug("Command: %s", command)
+
             if (command != None):
                 command_queue.append(command)
             
         game.send_command_queue(command_queue)
+        
+        if len(sys.argv) != 1:
+            cattle.saveMemory(MEMORY_FILENAME)
 
 except Exception as e:
     try:

@@ -7,47 +7,14 @@ import math
 from enum import Enum
 
 class ObservationIndexes(Enum):
-    closestOwnedPlanets = 0
+    closestFriendlyPlanets = 0
     closestEmptyPlanets = 1
     closestEnemyPlanets = 2
 
     closestFriendlyShips = 3
     closestEnemyShips = 4
 
-# class ObservationIndexes(Enum):
-#     NbTurn = 0
-#     MyShip = 1
-#     closestOwnedPlanet1 = 2
-#     closestOwnedPlanet2 = 3
-#     closestOwnedPlanet3 = 4
-#     closestOwnedPlanet4 = 5
-#     closestOwnedPlanet5 = 6
-
-#     closestEmptyPlanet1 = 7
-#     closestEmptyPlanet2 = 8
-#     closestEmptyPlanet3 = 9
-#     closestEmptyPlanet4 = 10
-#     closestEmptyPlanet5 = 11
-
-#     closestEnemyPlanets1 = 12
-#     closestEnemyPlanets2 = 13
-#     closestEnemyPlanets3 = 14
-#     closestEnemyPlanets4 = 15
-#     closestEnemyPlanets5 = 16
-
-#     closestFriendlyShip1 = 17
-#     closestFriendlyShip2 = 18
-#     closestFriendlyShip3 = 19
-#     closestFriendlyShip4 = 20
-#     closestFriendlyShip5 = 21
-
-#     closestEnemyShip1 = 22
-#     closestEnemyShip2 = 23
-#     closestEnemyShip3 = 24
-#     closestEnemyShip4 = 25
-#     closestEnemyShip5 = 26
-
-# [nbTurn, myState, closestOwnedPlanetx5, closestEmptyPlanetx5, closestEnemyPlanetsx5, closestFriendlyShip x 5, closestEnemyShipx5]
+# [nbTurn, myState, closestFriendlyPlanetx5, closestEmptyPlanetx5, closestEnemyPlanetsx5, closestFriendlyShip x 5, closestEnemyShipx5]
 
 
 null_ship_state = [0, 0, 0, 0, 0, 0, 0]
@@ -104,9 +71,6 @@ def _getReward(map):
 
     return totalReward
 
-    # average = np.average((totalShipReward, shipHealthReward, productionSpeedReward))
-    # return average
-
 def observe(map, ship):
     myId = map.get_me().id
     allEntity = map.nearby_entities_by_distance(ship)
@@ -117,46 +81,67 @@ def observe(map, ship):
         for candidate in candidates:
             planets.append(candidate)
 
-    # planets = np.array(planets)
-    # planets = planets.flatten()
-    # planets = [entity for entity in allEntity if entity is ntt.Planet]
-
-    logging.debug("planets: %s", planets)
-
-    friendlyPlanets = [entity for entity in planets if entity.owner != None and entity.owner.id == myId]
-    neutralPlanets = [entity for entity in planets if entity.owner == None]
-    enemyPlanets = [entity for entity in planets if entity.owner != None and entity.owner.id != myId]
-
+    neutralPlanets = []
+    friendlyPlanets = []
+    enemyPlanets = []
+    for entity in planets:
+        if entity.owner == None:
+            neutralPlanets.append(entity)
+        elif entity.owner == myId:
+            friendlyPlanets.append(entity)
+        else:
+            enemyPlanets.append(entity)
 
     ships = []
     for distance,entities in allEntity.items():
-        ships.append([entity for entity in entities if type(entity) is ntt.Ship])
+        candidates = [entity for entity in entities if type(entity) is ntt.Ship]
+        for candidate in candidates:
+            ships.append(candidate)
 
     ships = np.array(ships)
     ships = ships.flatten()
 
-    friendlyShips = [entity for entity in ships if entity is ntt.Ship and entity.id == myId]
-    enemyShips = [entity for entity in ships if entity is ntt.Ship and entity.id != myId]
+    friendlyShips = [entity for entity in ships if entity.owner.id == myId]
+    enemyShips = [entity for entity in ships if entity.owner.id != myId]
 
     return [friendlyPlanets, neutralPlanets, enemyPlanets, friendlyShips, enemyShips]
 
 def createStateFromObservations(nbTurn, myShip, observations):
-    # [nbTurn, myState, closestOwnedPlanetx5, closestEmptyPlanetx5, closestEnemyPlanetsx5, closestFriendlyShip x 5, closestEnemyShipx5]
-
+    # [nbTurn, myState, closestFriendlyPlanetx5, closestEmptyPlanetx5, closestEnemyPlanetsx5, closestFriendlyShip x 5, closestEnemyShipx5]
+    
     turnState = [].append(nbTurn)
     myState = _getShipState(myShip, myShip)
 
-    friendlyPlanetStates = _fetchClosestPlanetStates(myShip, observations[ObservationIndexes.closestOwnedPlanets.value], 5)
+    friendlyPlanetStates = _fetchClosestPlanetStates(myShip, observations[ObservationIndexes.closestFriendlyPlanets.value], 5)
     neutralPlanetStates = _fetchClosestPlanetStates(myShip, observations[ObservationIndexes.closestEmptyPlanets.value], 5)
     enemyPlanetStates = _fetchClosestPlanetStates(myShip, observations[ObservationIndexes.closestEnemyPlanets.value], 5)
 
     friendlyShipStates = _fetchClosestShipStates(myShip, observations[ObservationIndexes.closestFriendlyShips.value], 5)
     enemyShipStates = _fetchClosestShipStates(myShip, observations[ObservationIndexes.closestEnemyShips.value], 5)
 
-    allStates = np.array([turnState, myState, friendlyPlanetStates, neutralPlanetStates, enemyPlanetStates, friendlyShipStates, enemyShipStates])
-    allStates = allStates.flatten()
+    allStates = []
+    allStates.append(nbTurn)
+    for feature in myState:
+        allStates.append(feature)
+    for planet in friendlyPlanetStates:
+        for feature in planet:
+            allStates.append(feature)
+    for planet in neutralPlanetStates:
+        for feature in planet:
+            allStates.append(feature)
+    for planet in enemyPlanetStates:
+        for feature in planet:
+            allStates.append(feature)
+    for ship in friendlyShipStates:
+        for feature in ship:
+            allStates.append(feature)
+    for ship in enemyShipStates:
+        for feature in ship:
+            allStates.append(feature)
 
-    return allStates
+    npAllStates = np.array(allStates)
+    
+    return npAllStates
 
 def _fetchClosestPlanetStates(myShip, planets, nb_planet_to_fetch):
     planet_states = []
@@ -181,7 +166,7 @@ def _fetchClosestShipStates(myShip, ships, nb_ship_to_fetch):
     return ship_states
 
 def _getPlanetState(myShip, planet):
-    myId = myShip.owner.id
+    myId = myShip.owner
     state = np.array([])
     state = np.append(state, myShip.calculate_distance_between(planet))
 
@@ -200,12 +185,12 @@ def _getPlanetState(myShip, planet):
         
         state = np.append(state, 0)
 
-        if planet.owner.id != myId:
+        if planet.owner != myId:
             state = np.append(state, 1)
         else:
             state = np.append(state, 0)
 
-        if planet.owner.id == myId:
+        if planet.owner == myId:
             state = np.append(state, 1)
         else:
             state = np.append(state, 0)
@@ -252,9 +237,9 @@ def _getShipState(myShip, ship):
     assert len(state) == len(null_ship_state)
     return state
 
-def getCommand(game_map, ship, action_prediction, observations):
+def getCommand(game_map, myShip, action_prediction, observations):
     # observation is what is returned from the observe() method:
-    #  [nbTurn, myState, closestOwnedPlanetx5, closestEmptyPlanetx5, closestEnemyPlanetsx5, closestFriendlyShip x 5, closestEnemyShipx5]
+    #  [nbTurn, myState, closestFriendlyPlanetx5, closestEmptyPlanetx5, closestEnemyPlanetsx5, closestFriendlyShip x 5, closestEnemyShipx5]
 
     # actions are :
     # colonize 1st closest friendly planet
@@ -267,15 +252,12 @@ def getCommand(game_map, ship, action_prediction, observations):
     # move towards 2nd closest enemy ship
     # move towards ...5th closest enemy ship
 
-    logging.debug("action_prediction: %s", action_prediction)
-    logging.debug("observations: %s", observations)
-
     command = None
     action = np.argmax(action_prediction)
     if action < 10: # colonize 1st closest friendly planet
         
         if action < 5:
-            planets = observations[ObservationIndexes.closestFriendlyShips.value]
+            planets = observations[ObservationIndexes.closestFriendlyPlanets.value]
         else:
             planets = observations[ObservationIndexes.closestEmptyPlanets.value]
 
@@ -286,11 +268,11 @@ def getCommand(game_map, ship, action_prediction, observations):
         planet = planets[planetIndex]
 
         if planet != None:
-            if ship.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
-                return ship.dock(planet)
+            if myShip.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
+                return myShip.dock(planet)
             
-            command = navigate_command = ship.navigate(
-                ship.closest_point_to(planet),
+            command = navigate_command = myShip.navigate(
+                myShip.closest_point_to(planet),
                 game_map,
                 speed=int(hlt.constants.MAX_SPEED/2),
                 ignore_ships=True)
@@ -310,3 +292,10 @@ def getCommand(game_map, ship, action_prediction, observations):
                 speed=int(hlt.constants.MAX_SPEED/2),
                 ignore_ships=True)
     return command
+
+def flatten(S):
+    if S == []:
+        return S
+    if isinstance(S[0], list):
+        return flatten(S[0]) + flatten(S[1:])
+    return S[:1] + flatten(S[1:])

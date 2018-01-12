@@ -28,6 +28,7 @@ with RedirectStdStreams(stdout=devnull, stderr=devnull):
     from collections import deque
 
     import tensorflow as tf
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
 
     import keras
@@ -60,6 +61,7 @@ class Cattle:
         self.epsilon_decay = 0.995
         self.learning_rate = 0.001
         self.model = self._build_model()
+        self.old_state_by_id = {}
 
     def _build_model(self):
         # Neural Net for Deep-Q learning Model
@@ -77,8 +79,13 @@ class Cattle:
         model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
         return model
 
-    def remember(self, state, action, reward, next_state, next_ship_state, done):
-        self.memory.append((state, action, reward, next_game_state, next_ship_state, done))
+    def rememberNextState(self, id, state, actions, reward):
+        if id not in self.old_state_by_id:
+            self.old_state_by_id[id] = (state)
+        else:
+            old_state = self.old_state_by_id[id]
+            self.memory.append((id, state, actions, reward))
+            self.old_state_by_id[id] = state
 
     def forcePredict(self,state):
         state = state.reshape(1, state.shape[0])
@@ -86,7 +93,6 @@ class Cattle:
         act_values = self.model.predict(state)
         return act_values
         
-
     def predict(self, state, ship, game_map):
         if np.random.rand() <= self.epsilon:
             # starter bot
@@ -172,23 +178,31 @@ class Cattle:
 
     def load(self):
         dir = './{}/data/'.format(self.name)
+        if os.path.exists(dir) == False:
+            os.makedirs(dir)
         if os.path.isfile(dir+'model'):
             self.model.load_weights(dir+'model')
         if os.path.isfile(dir+'epsilon'):
             self.epsilon = pickle.load(open(dir+'epsilon', 'rb'))
-        # self.epsilon = 0
+        self.epsilon = 0
 
     def save(self):
         dir = './{}/data/'.format(self.name)
+        if os.path.exists(dir) == False:
+            os.makedirs(dir)
         self.model.save_weights(dir+'model')
         pickle.dump(self.epsilon, open(dir+'epsilon', 'wb'))
 
     def loadMemory(self, fileName):
         dir = './{}/memory/'.format(self.name)
+        if os.path.exists(dir) == False:
+            os.makedirs(dir)
         if os.path.isfile(fileName):
             self.memory = pickle.load(open(fileName, 'rb'))
 
     def saveMemory(self, fileName):
         dir = './{}/memory/'.format(self.name)
-        logging.debug("Saving Memory of length %s", len(self.memory))
-        pickle.dump(self.memory, open('./data/memory/' + fileName, 'wb'))
+        if os.path.exists(dir) == False:
+            os.makedirs(dir)
+        logging.debug("Saving Memory of length %s in file %s", len(self.memory), dir )
+        pickle.dump(self.memory, open(dir + fileName, 'wb'))
