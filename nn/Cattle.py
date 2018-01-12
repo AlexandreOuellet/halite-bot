@@ -55,7 +55,7 @@ class Cattle:
         self.ship_input_shape = ship_input_shape
         self.output_size = output_size
         self.memory = deque()
-        self.gamma = 0.95    # discount rate
+        self.gamma = 0.99    # discount rate
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.995
@@ -68,10 +68,10 @@ class Cattle:
         guylaine = Conv2D(32, (8, 8), name='guylaine_conv1', activation='relu')(guylaine_input)
         # guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool1')(guylaine)
 
-        guylaine = Conv2D(32, (4, 4), name='guylaine_conv2', activation='relu')(guylaine)
+        guylaine = Conv2D(64, (4, 4), name='guylaine_conv2', activation='relu')(guylaine)
         # guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool2')(guylaine)
 
-        guylaine = Conv2D(32, (3, 3), name='guylaine_conv3', activation='relu')(guylaine)
+        guylaine = Conv2D(64, (3, 3), name='guylaine_conv3', activation='relu')(guylaine)
         # guylaine = MaxPooling2D(pool_size=(2, 2), name='guylaine_maxpool3')(guylaine)
 
         # model.add(Convolution2D(64, (3, 3), name='conv3', data_format="channels_last"))
@@ -115,24 +115,24 @@ class Cattle:
     def predict(self, game_state, ship_state, ship, game_map):
         if np.random.rand() <= self.epsilon:
             # starter bot
-            # starter_action = starterBot.predictStarterBot(ship, game_map)
-            # logging.debug("starter_action: %s", starter_action)
-            # index = nnutils.parseCommandToActionIndex(starter_action)
-            # logging.debug("index: %s", index)
-            # actions = np.random.rand(self.output_size)
-            # if index == None:
-            #     actions[3] = 1
-            # else:
-            #     actions[index] = 1
+            starter_action = starterBot.predictStarterBot(ship, game_map)
+            logging.debug("starter_action: %s", starter_action)
+            index = nnutils.parseCommandToActionIndex(starter_action)
+            logging.debug("index: %s", index)
+            actions = np.random.rand(self.output_size)
+            if index == None:
+                actions[3] = 1
+            else:
+                actions[index] = 1
             
             # random action
-            actions = np.random.rand(self.output_size)
+            # actions = np.random.rand(self.output_size)
 
-            # Force docking
-            for planet in game_map.all_planets():
-                if ship.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
-                    actions[0] = 1 # force dock if possible
-                    logging.debug("Forced dock")
+            # # Force docking
+            # for planet in game_map.all_planets():
+            #     if ship.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
+            #         actions[0] = 1 # force dock if possible
+            #         logging.debug("Forced dock")
 
             action_index = np.argmax(actions)
             for i in range(0, len(actions)):
@@ -167,7 +167,8 @@ class Cattle:
 
         targets = np.zeros((len(self.memory), self.output_size))
 
-        for i in range(0, len(self.memory)):
+        reward = 0
+        for i in reversed(range(0, len(self.memory))):
             print("Gathering data for batch i:%s", i)
             game_state, ship_state, action_taken, next_reward, next_game_state, next_ship_state, done = self.memory[i]
 
@@ -177,10 +178,11 @@ class Cattle:
             targets[i] = self.forcePredict(game_state, ship_state)
 
             # First, predict the Q values of the next states. Note how we are passing ones as the mask.
-            next_Q_values = self.forcePredict(next_game_state, next_ship_state)
+            # next_Q_values = self.forcePredict(next_game_state, next_ship_state)
 
             # The Q values of each start state is the reward + gamma * the max next state Q value
-            targets[i][action_taken] = next_reward + self.gamma * np.max(next_Q_values)
+            reward = next_reward + self.gamma *  reward
+            targets[i][action_taken] = reward
 
 
         print("Done gathering data for batch")

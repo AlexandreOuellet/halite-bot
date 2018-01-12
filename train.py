@@ -28,7 +28,7 @@ for file in os.listdir("./data/memory/"):
     CATTLE.load()
 
     CATTLE.loadMemory(fullFile)
-    losses = (CATTLE.replay(128, 25, 'ReLuV2', file))
+    losses = (CATTLE.replay(32, 25, 'reduced_actions', file))
     for loss in losses:
         history_losses.append(loss)
 
