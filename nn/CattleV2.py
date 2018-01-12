@@ -187,7 +187,7 @@ class Cattle:
             self.model.load_weights(dir+'model')
         if os.path.isfile(dir+'epsilon'):
             self.epsilon = pickle.load(open(dir+'epsilon', 'rb'))
-        self.epsilon = 0
+        # self.epsilon = 0
 
     def save(self):
         dir = './{}/data/'.format(self.name)
