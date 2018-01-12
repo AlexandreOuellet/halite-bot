@@ -62,7 +62,7 @@ try:
             # cattle.remember(ship, ship_state, reward, next_state)
 
             actions = cattle.predict(ship_state, ship, game_map)
-            command = nnutils.getCommand(ship, actions, observations)
+            command = nnutils.getCommand(game_map, ship, actions, observations)
             if (command != None):
                 command_queue.append(command)
             

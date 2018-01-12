@@ -1,4 +1,5 @@
 from hlt import entity as ntt
+import hlt
 import logging
 import numpy as np
 import string
@@ -251,7 +252,7 @@ def _getShipState(myShip, ship):
     assert len(state) == len(null_ship_state)
     return state
 
-def getCommand(ship, action_prediction, observations):
+def getCommand(game_map, ship, action_prediction, observations):
     # observation is what is returned from the observe() method:
     #  [nbTurn, myState, closestOwnedPlanetx5, closestEmptyPlanetx5, closestEnemyPlanetsx5, closestFriendlyShip x 5, closestEnemyShipx5]
 
@@ -266,6 +267,9 @@ def getCommand(ship, action_prediction, observations):
     # move towards 2nd closest enemy ship
     # move towards ...5th closest enemy ship
 
+    logging.debug("action_prediction: %s", action_prediction)
+    logging.debug("observations: %s", observations)
+
     command = None
     action = np.argmax(action_prediction)
     if action < 10: # colonize 1st closest friendly planet
@@ -276,23 +280,33 @@ def getCommand(ship, action_prediction, observations):
             planets = observations[ObservationIndexes.closestEmptyPlanets.value]
 
         planetIndex = action % 5
-        planet = planets[action]
+        if len(planets) <= planetIndex:
+            return command
+
+        planet = planets[planetIndex]
 
         if planet != None:
             if ship.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
-                command = ship.dock(planet)
-            else:
-                command = navigate_command = ship.navigate(
-                    ship.closest_point_to(planet),
-                    game_map,
-                    speed=int(hlt.constants.MAX_SPEED/2),
-                    ignore_ships=True)
-    else:
-        otherShip = observations[ObservationIndexes.closestEnemyShips.value][action - 10]
-        if otherShip != None:
+                return ship.dock(planet)
+            
             command = navigate_command = ship.navigate(
-                    [otherShip.x, otherShip.y],
-                    game_map,
-                    speed=int(hlt.constants.MAX_SPEED/2),
-                    ignore_ships=True)
+                ship.closest_point_to(planet),
+                game_map,
+                speed=int(hlt.constants.MAX_SPEED/2),
+                ignore_ships=True)
+    else:
+        otherShips = observations[ObservationIndexes.closestEnemyShips.value]
+        shipIndex = action - 10
+        if len(otherShips) <= shipIndex:
+            return command
+
+        otherShip = otherShips[action - 10]
+        if otherShip == None:
+            return command
+
+        command = navigate_command = ship.navigate(
+                [otherShip.x, otherShip.y],
+                game_map,
+                speed=int(hlt.constants.MAX_SPEED/2),
+                ignore_ships=True)
     return command
