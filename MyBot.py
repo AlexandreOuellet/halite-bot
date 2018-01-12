@@ -52,6 +52,9 @@ try:
 
         reward = nnutils.getReward(old_map, game_map)
 
+        currentProduction, nbShips, health = nnutils.getFriendlyObservation(game_map)
+        enemyProduction, nbEnemyShips, enemyHealth = nnutils.getEnemyObservation(game_map)
+
         if len(sys.argv) == 1: # nullbot
             game.send_command_queue(command_queue)
             continue
@@ -61,7 +64,9 @@ try:
             observations = nnutils.observe(game_map, ship)
             ship_state = nnutils.createStateFromObservations(nbTurn,
                 ship,
-                observations)
+                observations,
+                currentProduction, nbShips, health,
+                enemyProduction, nbEnemyShips, enemyHealth)
 
             # logging.debug("observations")
             # logging.debug("closestEmptyPlanets: %s", observations[nnutils.ObservationIndexes.closestEmptyPlanets.value])

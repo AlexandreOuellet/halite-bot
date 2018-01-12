@@ -1,39 +1,35 @@
 """This is to be executed after there are some data within ./data/memory/."""
 
 import os
-import nn.Cattle as Cattle
+import nn.CattleV2 as Cattle
 import nnutils
 import matplotlib.pyplot as plt
 import pylab
 import pickle
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1' 
-
-SHIP_INPUT_SIZE = 5
-GUYLAINE_OUTPUT_SIZE = 320*240
-CATTLE_OUTPUT_SIZE = 3 + nnutils.nbAngleStep * nnutils.nbSpeedStep # dock/undock/nothing
-# guylaine = GuylaineV2.GuylainpeV2(nnutils.tileWidth, nnutils.tileHeight, len(state), guylaine_output_size, 'data/GuylaineV2' + sys.argv[1])
-CATTLE = Cattle.Cattle((14, nnutils.tileWidth, nnutils.tileHeight), (SHIP_INPUT_SIZE,), CATTLE_OUTPUT_SIZE, 'data/CattleG1')
-# guylaine_output = guylaine.act(state)
+name = 'G1'
+CATTLE = cattle = Cattle.Cattle((nnutils.input_size,), nnutils.output_size, name)
 
 # guylaine.load()
 history_losses = []
 
-if os.path.isfile('./data/loss_historyv2'):
-    history_losses = pickle.load(open('./data/loss_historyv2', 'rb'))
+dir = "./{}/".format(name)
+if os.path.isfile(dir + 'loss_historyv2'):
+    history_losses = pickle.load(open(dir + 'loss_historyv2', 'rb'))
 
-for file in os.listdir("./data/memory/"):
-    fullFile = os.path.join("./data/memory/", file)
-    print("Opening file %s", fullFile)
+for file in os.listdir(dir + 'memory/'):
+    # fullFile = os.path.join(dir + "memory/", file)
+    print("Opening file %s", file)
     CATTLE.load()
 
-    CATTLE.loadMemory(fullFile)
-    losses = (CATTLE.replay(32, 25, 'reduced_actions', file))
+    CATTLE.loadMemory(file)
+    losses = CATTLE.replay(32, 25, 'simple')
     for loss in losses:
         history_losses.append(loss)
 
     CATTLE.save()
-    pickle.dump(history_losses, open('./data/loss_historyv2', 'wb'))
+    pickle.dump(history_losses, open(dir + 'loss_historyv2', 'wb'))
 
     os.remove(fullFile)
 

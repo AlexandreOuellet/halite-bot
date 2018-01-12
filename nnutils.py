@@ -19,7 +19,7 @@ class ObservationIndexes(Enum):
 
 null_ship_state = [0, 0, 0, 0, 0, 0, 0]
 null_planet_state = [0, 0, 0, 0, 0, 0, 0]
-input_size = 1 + len(null_ship_state) + len(null_planet_state) * 5 * 3 + len(null_ship_state) * 5 * 2
+input_size = 1 + len(null_ship_state) + len(null_planet_state) * 5 * 3 + len(null_ship_state) * 5 * 2 + 6
 output_size = 15 # dock/undock/nothing
 
 def getReward(map1, map2):
@@ -33,6 +33,48 @@ def getReward(map1, map2):
     logging.debug("finalReward %s",  finalReward)
 
     return finalReward
+
+def getFriendlyObservation(map):
+    myId = map.get_me().id
+
+    productionSpeed = 0
+    for planet in map.all_planets():
+        if planet.owner == None or planet.owner.id != myId:
+            continue
+        for dockedShip in planet.all_docked_ships():
+
+            productionSpeed += 1
+
+    nbShips = len(map.get_me().all_ships())
+    health = 0
+    for ship in map.get_me().all_ships():
+        health += (ship.health/255)
+
+    return productionSpeed, nbShips, health 
+
+
+def getEnemyObservation(map):
+    myId = map.get_me().id
+
+    productionSpeed = 0
+    for planet in map.all_planets():
+        if planet.owner == None or planet.owner.id == myId:
+            continue
+        for dockedShip in planet.all_docked_ships():
+
+            productionSpeed += 1
+
+    nbShips = len(map.get_me().all_ships())
+    health = 0
+
+    for player in map.all_players():
+        if player.id == myId:
+            continue
+        for ship in map.get_me().all_ships():
+            health += (ship.health/255)
+            nbShips += 1
+
+    return productionSpeed, nbShips, health
 
 def _getReward(map):
     myId = map.get_me().id
@@ -106,7 +148,9 @@ def observe(map, ship):
 
     return [friendlyPlanets, neutralPlanets, enemyPlanets, friendlyShips, enemyShips]
 
-def createStateFromObservations(nbTurn, myShip, observations):
+def createStateFromObservations(nbTurn, myShip, observations,
+                currentProduction, nbShips, health,
+                enemyProduction, nbEnemyShips, enemyHealth):
     # [nbTurn, myState, closestFriendlyPlanetx5, closestEmptyPlanetx5, closestEnemyPlanetsx5, closestFriendlyShip x 5, closestEnemyShipx5]
     
     turnState = [].append(nbTurn)
@@ -138,6 +182,14 @@ def createStateFromObservations(nbTurn, myShip, observations):
     for ship in enemyShipStates:
         for feature in ship:
             allStates.append(feature)
+
+
+    allStates.append(currentProduction)
+    allStates.append(nbShips)
+    allStates.append(health)
+    allStates.append(enemyProduction)
+    allStates.append(nbEnemyShips)
+    allStates.append(enemyHealth)
 
     npAllStates = np.array(allStates)
     
@@ -278,6 +330,7 @@ def getCommand(game_map, myShip, action_prediction, observations):
                 ignore_ships=True)
     else:
         otherShips = observations[ObservationIndexes.closestEnemyShips.value]
+        logging.debug("otherShips : %s", otherShips)
         shipIndex = action - 10
         if len(otherShips) <= shipIndex:
             return command
@@ -286,8 +339,8 @@ def getCommand(game_map, myShip, action_prediction, observations):
         if otherShip == None:
             return command
 
-        command = navigate_command = ship.navigate(
-                [otherShip.x, otherShip.y],
+        command = navigate_command = myShip.navigate(
+                otherShip,
                 game_map,
                 speed=int(hlt.constants.MAX_SPEED/2),
                 ignore_ships=True)

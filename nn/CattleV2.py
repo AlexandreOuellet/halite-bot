@@ -84,7 +84,7 @@ class Cattle:
             self.old_state_by_id[id] = (state)
         else:
             old_state = self.old_state_by_id[id]
-            self.memory.append((id, state, actions, reward))
+            self.memory.append((id, old_state, actions, reward, state))
             self.old_state_by_id[id] = state
 
     def forcePredict(self,state):
@@ -146,8 +146,9 @@ class Cattle:
 
         for i in reversed(range(0, len(self.memory))):
             print("Gathering data for batch i:%s", i)
-            state, action_taken, reward, next_state, done = self.memory[i]
+            shipId, state, action, reward, next_state = self.memory[i]
 
+            action_taken = np.argmax(action)
             state_batch.append(state)
 
             targets[i] = self.forcePredict(state)
@@ -159,21 +160,23 @@ class Cattle:
             targets[i][action_taken] = target
 
         print("Done gathering data for batch")
-        if len(ship_state_batch) != 0:
-            print("Fitting the model")
-            # callbacks = [EarlyStop(monitor='loss', value=0.0021, verbose=1), TensorBoard(write_images=True, log_dir='./logs/'+strategy+'/'+filename]
-            tensor_log_file = './data/logs/{}/{}'.format(self.name, run_name)
-            callback = TensorBoard(write_images=True, log_dir=tensor_log_file)
 
-            history = self.model.fit(np.array(state_batch), np.array(targets), batch_size=batch_size, verbose=1, epochs=epoch, callbacks=[callback])
-            print("Done fitting the model, printing history")
-            print(history)
-            print(history.history)
+        print("Fitting the model")
+        # callbacks = [EarlyStop(monitor='loss', value=0.0021, verbose=1), TensorBoard(write_images=True, log_dir='./logs/'+strategy+'/'+filename]
+        tensor_log_file = './{}/data/logs/{}'.format(self.name, run_name)
+        callback = TensorBoard(write_images=True, log_dir=tensor_log_file)
+
+        history = self.model.fit(np.array(state_batch), np.array(targets), batch_size=batch_size, verbose=1, epochs=epoch, callbacks=[callback])
+        print("Done fitting the model, printing history")
+        print(history)
+        print(history.history)
 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
             
         print("Training done.  epsilon: %s", self.epsilon)
+
+
         return history.history['loss']
 
     def load(self):
@@ -197,8 +200,8 @@ class Cattle:
         dir = './{}/memory/'.format(self.name)
         if os.path.exists(dir) == False:
             os.makedirs(dir)
-        if os.path.isfile(fileName):
-            self.memory = pickle.load(open(fileName, 'rb'))
+        if os.path.isfile(dir+fileName):
+            self.memory = pickle.load(open(dir+fileName, 'rb'))
 
     def saveMemory(self, fileName):
         dir = './{}/memory/'.format(self.name)
