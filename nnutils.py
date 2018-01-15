@@ -5,6 +5,7 @@ import numpy as np
 import string
 import math
 from enum import Enum
+from operator import itemgetter
 
 class ObservationIndexes(Enum):
     closestFriendlyPlanets = 0
@@ -116,12 +117,12 @@ def _getReward(map):
 def observe(map, ship):
     myId = map.get_me().id
     allEntity = map.nearby_entities_by_distance(ship)
+    keysByDistance = sorted(allEntity.keys(), reverse=False)
 
     planets = []
-    for distance,entities in allEntity.items():
-        candidates = [entity for entity in entities if type(entity) is ntt.Planet]
-        for candidate in candidates:
-            planets.append(candidate)
+    for k in keysByDistance:
+        for entity in [entity for entity in allEntity[k] if type(entity) is ntt.Planet]:
+            planets.append(entity)
 
     neutralPlanets = []
     friendlyPlanets = []
@@ -135,10 +136,9 @@ def observe(map, ship):
             enemyPlanets.append(entity)
 
     ships = []
-    for distance,entities in allEntity.items():
-        candidates = [entity for entity in entities if type(entity) is ntt.Ship]
-        for candidate in candidates:
-            ships.append(candidate)
+    for k in keysByDistance:
+        for entity in [entity for entity in allEntity[k] if type(entity) is ntt.Ship]:
+            ships.append(entity)
 
     ships = np.array(ships)
     ships = ships.flatten()
