@@ -19,12 +19,12 @@ if os.path.isfile(dir + 'loss_historyv2'):
     history_losses = pickle.load(open(dir + 'loss_historyv2', 'rb'))
 
 for file in os.listdir(dir + 'memory/'):
-    # fullFile = os.path.join(dir + "memory/", file)
+    fullFile = os.path.join(dir + "memory/", file)
     print("Opening file %s", file)
     CATTLE.load()
 
     CATTLE.loadMemory(file)
-    losses = CATTLE.replay(32, 25, 'simple')
+    losses = CATTLE.replay(32, 200, file)
     for loss in losses:
         history_losses.append(loss)
 

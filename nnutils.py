@@ -304,18 +304,50 @@ def getCommand(game_map, myShip, action_prediction, observations):
     # move towards 2nd closest enemy ship
     # move towards ...5th closest enemy ship
 
-    command = None
     action = np.argmax(action_prediction)
+    if action == 0:
+        logging.debug("Colonizing 1st closest friendly planet")
+    if action == 1:
+        logging.debug("Colonizing 2nd closest friendly planet")
+    if action == 2:
+        logging.debug("Colonizing 3rd closest friendly planet")
+    if action == 3:
+        logging.debug("Colonizing 4th closest friendly planet")
+    if action == 4:
+        logging.debug("Colonizing 5th closest friendly planet")
+    if action == 5:
+        logging.debug("Colonizing 1st closest empty planet")
+    if action == 6:
+        logging.debug("Colonizing 2nd closest empty planet")
+    if action == 7:
+        logging.debug("Colonizing 3rd closest empty planet")
+    if action == 8:
+        logging.debug("Colonizing 4th closest empty planet")
+    if action == 9:
+        logging.debug("Colonizing 5th closest empty planet")
+    if action == 10:
+        logging.debug("Attacking 1st closest enemy ship")
+    if action == 11:
+        logging.debug("Attacking 2nd closest enemy ship")
+    if action == 12:
+        logging.debug("Attacking 3rd closest enemy ship")
+    if action == 13:
+        logging.debug("Attacking 4th closest enemy ship")
+    if action == 14:
+        logging.debug("Attacking 5th closest enemy ship")
+
     if action < 10: # colonize 1st closest friendly planet
-        
+
         if action < 5:
             planets = observations[ObservationIndexes.closestFriendlyPlanets.value]
-        else:
+        if action >= 5:
             planets = observations[ObservationIndexes.closestEmptyPlanets.value]
+
+        logging.debug("Planets to colonize : %s", planets)
 
         planetIndex = action % 5
         if len(planets) <= planetIndex:
-            return command
+            return None
 
         planet = planets[planetIndex]
 
@@ -323,28 +355,28 @@ def getCommand(game_map, myShip, action_prediction, observations):
             if myShip.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
                 return myShip.dock(planet)
             
-            command = navigate_command = myShip.navigate(
+            return myShip.navigate(
                 myShip.closest_point_to(planet),
                 game_map,
                 speed=int(hlt.constants.MAX_SPEED/2),
                 ignore_ships=True)
     else:
         otherShips = observations[ObservationIndexes.closestEnemyShips.value]
-        logging.debug("otherShips : %s", otherShips)
+        logging.debug("enemyShips : %s", otherShips)
         shipIndex = action - 10
         if len(otherShips) <= shipIndex:
-            return command
+            return None
 
         otherShip = otherShips[action - 10]
         if otherShip == None:
-            return command
+            return None
 
-        command = navigate_command = myShip.navigate(
+        return myShip.navigate(
                 otherShip,
                 game_map,
                 speed=int(hlt.constants.MAX_SPEED/2),
                 ignore_ships=True)
-    return command
+    return None
 
 def flatten(S):
     if S == []:

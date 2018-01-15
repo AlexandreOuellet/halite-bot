@@ -8,11 +8,11 @@ reward_history = []
 all_reward_history = []
 
 
-for file in os.listdir("./data/"):
+for file in os.listdir("./G1/"):
     if "_totalRewards" not in file:
         continue
     
-    fullFile = os.path.join("./data/", file)
+    fullFile = os.path.join("./G1/", file)
     reward_history = pickle.load(open(fullFile, 'rb'))
     plt.plot(reward_history)
     all_reward_history.append(numpy.sum(reward_history))

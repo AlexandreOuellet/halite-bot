@@ -59,7 +59,7 @@ class Cattle:
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.995
-        self.learning_rate = 0.001
+        self.learning_rate = 0.0001
         self.model = self._build_model()
         self.old_state_by_id = {}
 
@@ -79,13 +79,13 @@ class Cattle:
         model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
         return model
 
-    def rememberNextState(self, id, state, actions, reward):
+    def rememberNextState(self, id, state, action_taken, reward):
         if id not in self.old_state_by_id:
-            self.old_state_by_id[id] = (state)
+            self.old_state_by_id[id] = (state, action_taken)
         else:
-            old_state = self.old_state_by_id[id]
-            self.memory.append((id, old_state, actions, reward, state))
-            self.old_state_by_id[id] = state
+            old_state, old_action_taken= self.old_state_by_id[id]
+            self.memory.append((id, old_state, old_action_taken, reward, state))
+            self.old_state_by_id[id] = (state, action_taken)
 
     def forcePredict(self,state):
         state = state.reshape(1, state.shape[0])
@@ -110,10 +110,10 @@ class Cattle:
             actions = np.random.rand(self.output_size)
 
             # # Force docking
-            for planet in game_map.all_planets():
-                if ship.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
-                    actions[0] = 1 # force dock if possible
-                    logging.debug("Forced dock")
+            # for planet in game_map.all_planets():
+            #     if ship.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
+            #         actions[0] = 1 # force dock if possible
+            #         logging.debug("Forced dock")
 
             action_index = np.argmax(actions)
             for i in range(0, len(actions)):
@@ -140,30 +140,40 @@ class Cattle:
         from keras.callbacks import TensorBoard
         print("Training")
 
+        # training per ships
+
+        nbDataPoint = 0
+        training_per_ship = {}
+        for shipId, state, action, reward, next_state in self.memory:
+            if shipId not in training_per_ship:
+                training_per_ship[shipId] = deque()
+            training_per_ship[shipId].append((state, action, reward, next_state))
+            nbDataPoint += 1
+
         state_batch = []
 
-        targets = np.zeros((len(self.memory), self.output_size))
+        targets = np.zeros((nbDataPoint, self.output_size))
 
-        for i in reversed(range(0, len(self.memory))):
-            print("Gathering data for batch i:%s", i)
-            shipId, state, action, reward, next_state = self.memory[i]
+        nbDataPoint = 0
+        for k in training_per_ship:
+            for state, action_taken, reward, next_state in training_per_ship[k]:
+                print("Gathering data for batch :%d", nbDataPoint)
+                state_batch.append(state)
+                targets[nbDataPoint] = self.forcePredict(state)
 
-            action_taken = np.argmax(action)
-            state_batch.append(state)
+                predicted_next_actions = self.forcePredict(next_state)
+                predicted_next_best_reward = np.amax(predicted_next_actions)
 
-            targets[i] = self.forcePredict(state)
+                target = reward + self.gamma * predicted_next_best_reward
+                targets[nbDataPoint][action_taken] = target
 
-            predicted_next_actions = self.forcePredict(next_state)
-            predicted_next_best_reward = np.argmax(predicted_next_actions)
-
-            target = reward + self.gamma *  predicted_next_best_reward
-            targets[i][action_taken] = target
+                nbDataPoint += 1
 
         print("Done gathering data for batch")
 
         print("Fitting the model")
         # callbacks = [EarlyStop(monitor='loss', value=0.0021, verbose=1), TensorBoard(write_images=True, log_dir='./logs/'+strategy+'/'+filename]
-        tensor_log_file = './{}/data/logs/{}'.format(self.name, run_name)
+        tensor_log_file = './logs/{}'.format(run_name)
         callback = TensorBoard(write_images=True, log_dir=tensor_log_file)
 
         history = self.model.fit(np.array(state_batch), np.array(targets), batch_size=batch_size, verbose=1, epochs=epoch, callbacks=[callback])
@@ -171,11 +181,10 @@ class Cattle:
         print(history)
         print(history.history)
 
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
+        # if self.epsilon > self.epsilon_min:
+        #     self.epsilon *= self.epsilon_decay
             
         print("Training done.  epsilon: %s", self.epsilon)
-
 
         return history.history['loss']
 
