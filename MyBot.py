@@ -81,13 +81,13 @@ try:
                 currentProduction, nbShips, health,
                 enemyProduction, nbEnemyShips, enemyHealth)
 
-            logging.debug("observations")
-            logging.debug("closestEmptyPlanets: %s", observations[nnutils.ObservationIndexes.closestEmptyPlanets.value])
-            logging.debug("closestEnemyPlanets: %s", observations[nnutils.ObservationIndexes.closestEnemyPlanets.value])
-            logging.debug("closestEnemyShips: %s", observations[nnutils.ObservationIndexes.closestEnemyShips.value])
-            logging.debug("closestFriendlyShips: %s", observations[nnutils.ObservationIndexes.closestFriendlyShips.value])
-            logging.debug("closestFriendlyPlanets: %s", observations[nnutils.ObservationIndexes.closestFriendlyPlanets.value])
-            logging.debug("ship_state: %s", ship_state)
+            # logging.debug("observations")
+            # logging.debug("closestEmptyPlanets: %s", observations[nnutils.ObservationIndexes.closestEmptyPlanets.value])
+            # logging.debug("closestEnemyPlanets: %s", observations[nnutils.ObservationIndexes.closestEnemyPlanets.value])
+            # logging.debug("closestEnemyShips: %s", observations[nnutils.ObservationIndexes.closestEnemyShips.value])
+            # logging.debug("closestFriendlyShips: %s", observations[nnutils.ObservationIndexes.closestFriendlyShips.value])
+            # logging.debug("closestFriendlyPlanets: %s", observations[nnutils.ObservationIndexes.closestFriendlyPlanets.value])
+            # logging.debug("ship_state: %s", ship_state)
 
             actions = cattle.predict(ship_state, ship, game_map)
             action_taken = np.argmax(actions)
@@ -95,7 +95,7 @@ try:
             cattle.rememberNextState(ship.id, ship_state, action_taken, reward)
 
             command = nnutils.getCommand(game_map, ship, actions, observations)
-            logging.debug("Command: %s", command)
+            # logging.debug("Command: %s", command)
 
             if (command != None):
                 command_queue.append(command)

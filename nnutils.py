@@ -92,19 +92,19 @@ def _getReward(map):
             totalShips[player.id] += 1
             totalShipsHealth[player.id] += ship.health
 
-    # nbShips = np.sum(totalShips)
+    nbShips = np.sum(totalShips)
     # totalShipReward = (totalShips[myId] - (nbShips - totalShips[myId])) / nbShips
-    # totalShipReward = totalShips[myId] - (nbShips - totalShips[myId])
-    totalShipReward = totalShips[myId]
+    totalShipReward = totalShips[myId] - (nbShips - totalShips[myId])
+    # totalShipReward = totalShips[myId]
 
-    # nbShipHealth = np.sum(totalShipsHealth)
-    # shipHealthReward = totalShipsHealth[myId] - (nbShipHealth - totalShipsHealth[myId])
-    shipHealthReward = totalShipsHealth[myId] / (255)
+    nbShipHealth = np.sum(totalShipsHealth)
+    shipHealthReward = totalShipsHealth[myId]/255 - ((nbShipHealth - totalShipsHealth[myId])/255)
+    # shipHealthReward = totalShipsHealth[myId] / (255)
 
     productionSpeedReward = np.sum(productionSpeedPerPlayer)
     if productionSpeedReward != 0:
-        # productionSpeedReward = productionSpeedPerPlayer[myId] - (productionSpeedReward - productionSpeedPerPlayer[myId])
-        productionSpeedReward = productionSpeedPerPlayer[myId]
+        productionSpeedReward = productionSpeedPerPlayer[myId] - (productionSpeedReward - productionSpeedPerPlayer[myId])
+        # productionSpeedReward = productionSpeedPerPlayer[myId]
 
     logging.debug("totalShipReward %s",  totalShipReward)
     logging.debug("shipHealthReward %s",  shipHealthReward)
@@ -130,7 +130,7 @@ def observe(map, ship):
     for entity in planets:
         if entity.owner == None:
             neutralPlanets.append(entity)
-        elif entity.owner == myId:
+        elif entity.owner.id == myId:
             friendlyPlanets.append(entity)
         else:
             enemyPlanets.append(entity)
@@ -237,12 +237,12 @@ def _getPlanetState(myShip, planet):
         
         state = np.append(state, 0)
 
-        if planet.owner != myId:
+        if planet.owner.id != myId:
             state = np.append(state, 1)
         else:
             state = np.append(state, 0)
 
-        if planet.owner == myId:
+        if planet.owner.id == myId:
             state = np.append(state, 1)
         else:
             state = np.append(state, 0)
@@ -305,36 +305,36 @@ def getCommand(game_map, myShip, action_prediction, observations):
     # move towards ...5th closest enemy ship
 
     action = np.argmax(action_prediction)
-    if action == 0:
-        logging.debug("Colonizing 1st closest friendly planet")
-    if action == 1:
-        logging.debug("Colonizing 2nd closest friendly planet")
-    if action == 2:
-        logging.debug("Colonizing 3rd closest friendly planet")
-    if action == 3:
-        logging.debug("Colonizing 4th closest friendly planet")
-    if action == 4:
-        logging.debug("Colonizing 5th closest friendly planet")
-    if action == 5:
-        logging.debug("Colonizing 1st closest empty planet")
-    if action == 6:
-        logging.debug("Colonizing 2nd closest empty planet")
-    if action == 7:
-        logging.debug("Colonizing 3rd closest empty planet")
-    if action == 8:
-        logging.debug("Colonizing 4th closest empty planet")
-    if action == 9:
-        logging.debug("Colonizing 5th closest empty planet")
-    if action == 10:
-        logging.debug("Attacking 1st closest enemy ship")
-    if action == 11:
-        logging.debug("Attacking 2nd closest enemy ship")
-    if action == 12:
-        logging.debug("Attacking 3rd closest enemy ship")
-    if action == 13:
-        logging.debug("Attacking 4th closest enemy ship")
-    if action == 14:
-        logging.debug("Attacking 5th closest enemy ship")
+    # if action == 0:
+    #     logging.debug("Colonizing 1st closest friendly planet")
+    # if action == 1:
+    #     logging.debug("Colonizing 2nd closest friendly planet")
+    # if action == 2:
+    #     logging.debug("Colonizing 3rd closest friendly planet")
+    # if action == 3:
+    #     logging.debug("Colonizing 4th closest friendly planet")
+    # if action == 4:
+    #     logging.debug("Colonizing 5th closest friendly planet")
+    # if action == 5:
+    #     logging.debug("Colonizing 1st closest empty planet")
+    # if action == 6:
+    #     logging.debug("Colonizing 2nd closest empty planet")
+    # if action == 7:
+    #     logging.debug("Colonizing 3rd closest empty planet")
+    # if action == 8:
+    #     logging.debug("Colonizing 4th closest empty planet")
+    # if action == 9:
+    #     logging.debug("Colonizing 5th closest empty planet")
+    # if action == 10:
+    #     logging.debug("Attacking 1st closest enemy ship")
+    # if action == 11:
+    #     logging.debug("Attacking 2nd closest enemy ship")
+    # if action == 12:
+    #     logging.debug("Attacking 3rd closest enemy ship")
+    # if action == 13:
+    #     logging.debug("Attacking 4th closest enemy ship")
+    # if action == 14:
+    #     logging.debug("Attacking 5th closest enemy ship")
 
     if action < 10: # colonize 1st closest friendly planet
 
@@ -343,7 +343,7 @@ def getCommand(game_map, myShip, action_prediction, observations):
         if action >= 5:
             planets = observations[ObservationIndexes.closestEmptyPlanets.value]
 
-        logging.debug("Planets to colonize : %s", planets)
+        # logging.debug("Planets to colonize : %s", planets)
 
         planetIndex = action % 5
         if len(planets) <= planetIndex:
@@ -362,7 +362,7 @@ def getCommand(game_map, myShip, action_prediction, observations):
                 ignore_ships=True)
     else:
         otherShips = observations[ObservationIndexes.closestEnemyShips.value]
-        logging.debug("enemyShips : %s", otherShips)
+        # logging.debug("enemyShips : %s", otherShips)
         shipIndex = action - 10
         if len(otherShips) <= shipIndex:
             return None

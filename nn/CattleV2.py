@@ -136,7 +136,7 @@ class Cattle:
         logging.debug("Predicted action index : %d", action_index)
         return actions
 
-    def replay(self, batch_size, epoch, run_name):
+    def replay(self, batch_size, epoch, run_name, train_with_epsilon):
         from keras.callbacks import TensorBoard
         print("Training")
 
@@ -181,8 +181,8 @@ class Cattle:
         print(history)
         print(history.history)
 
-        # if self.epsilon > self.epsilon_min:
-        #     self.epsilon *= self.epsilon_decay
+        if train_with_epsilon and self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
             
         print("Training done.  epsilon: %s", self.epsilon)
 

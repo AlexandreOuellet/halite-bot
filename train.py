@@ -6,13 +6,17 @@ import nnutils
 import matplotlib.pyplot as plt
 import pylab
 import pickle
+import sys
 
 # os.environ['CUDA_VISIBLE_DEVICES'] = '-1' 
-name = 'G1'
+name = 'G2'
 CATTLE = cattle = Cattle.Cattle((nnutils.input_size,), nnutils.output_size, name)
 
 # guylaine.load()
 history_losses = []
+
+train_with_epsilon = len(sys.argv) != 1
+print("training with epsilon decay : %s", train_with_epsilon)
 
 dir = "./{}/".format(name)
 if os.path.isfile(dir + 'loss_historyv2'):
@@ -24,14 +28,14 @@ for file in os.listdir(dir + 'memory/'):
     CATTLE.load()
 
     CATTLE.loadMemory(file)
-    losses = CATTLE.replay(32, 200, file)
+    losses = CATTLE.replay(32, 200, file, train_with_epsilon)
     for loss in losses:
         history_losses.append(loss)
 
     CATTLE.save()
     pickle.dump(history_losses, open(dir + 'loss_historyv2', 'wb'))
 
-    # os.remove(fullFile)
+    os.remove(fullFile)
 
 # plt.plot(history_losses)
 # plt.title('model loss')
