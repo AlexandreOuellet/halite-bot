@@ -25,7 +25,7 @@ if os.path.isfile(dir + 'loss_historyv2'):
 for file in os.listdir(dir + 'memory/'):
     fullFile = os.path.join(dir + "memory/", file)
     print("Opening file %s", file)
-    CATTLE.load()
+    CATTLE.load(False)
 
     CATTLE.loadMemory(file)
     losses = CATTLE.replay(32, 200, file, train_with_epsilon)

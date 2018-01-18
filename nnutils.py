@@ -4,6 +4,7 @@ import logging
 import numpy as np
 import string
 import math
+import random
 from enum import Enum
 from operator import itemgetter
 
@@ -20,7 +21,7 @@ class ObservationIndexes(Enum):
 
 null_ship_state = [0, 0, 0, 0, 0, 0, 0]
 null_planet_state = [0, 0, 0, 0, 0, 0, 0]
-input_size = 1 + len(null_ship_state) + len(null_planet_state) * 5 * 3 + len(null_ship_state) * 5 * 2 + 6
+input_size = 1 + len(null_ship_state) + len(null_planet_state) * 5 * 3 + len(null_ship_state) * 5 * 2 + 6 + 1
 output_size = 15 # dock/undock/nothing
 
 def getReward(map1, map2):
@@ -191,6 +192,8 @@ def createStateFromObservations(nbTurn, myShip, observations,
     allStates.append(nbEnemyShips)
     allStates.append(enemyHealth)
 
+    allStates.append(random.uniform(0, 1))
+
     npAllStates = np.array(allStates)
     
     return npAllStates
@@ -359,7 +362,7 @@ def getCommand(game_map, myShip, action_prediction, observations):
                 myShip.closest_point_to(planet),
                 game_map,
                 speed=int(hlt.constants.MAX_SPEED/2),
-                ignore_ships=True)
+                ignore_ships=False)
     else:
         otherShips = observations[ObservationIndexes.closestEnemyShips.value]
         # logging.debug("enemyShips : %s", otherShips)

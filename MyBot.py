@@ -49,7 +49,10 @@ try:
     
 
     cattle = Cattle.Cattle((nnutils.input_size,), nnutils.output_size, name)
-    cattle.load()
+    forceZeroEpsilon = True
+    if len(sys.argv) == 3:
+        forceZeroEpsilon = False
+    cattle.load(forceZeroEpsilon)
 
     command_queue = []
     shipStateAction = []

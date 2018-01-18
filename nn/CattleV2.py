@@ -19,32 +19,32 @@ class RedirectStdStreams(object):
 
 devnull = open(os.devnull, 'w')
 
-with RedirectStdStreams(stdout=devnull, stderr=devnull):
-    import random
-    import numpy as np
-    np.set_printoptions(threshold=np.nan)
+# with RedirectStdStreams(stdout=devnull, stderr=devnull):
+import random
+import numpy as np
+np.set_printoptions(threshold=np.nan)
 
 
-    from collections import deque
+from collections import deque
 
-    import tensorflow as tf
-    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+# import tensorflow as tf
+# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
 
-    import keras
-    from keras.models import Sequential, Model
-    from keras.layers import Dense, Input, Embedding, Conv2D, Flatten, Activation, MaxPooling2D, Dropout
-    from keras.optimizers import Adam
-    from keras.utils import to_categorical, plot_model
-    from nn import starterBot
-    import nnutils
+import keras
+from keras.models import Sequential, Model
+from keras.layers import Dense, Input, Embedding, Conv2D, Flatten, Activation, MaxPooling2D, Dropout
+from keras.optimizers import Adam
+from keras.utils import to_categorical, plot_model
+from nn import starterBot
+import nnutils
 
-    import pickle
-    import os.path
+import pickle
+import os.path
 
-    import time
-    import logging
-    from keras.callbacks import Callback
+import time
+import logging
+from keras.callbacks import Callback
 
 EPISODES = 1000
 DROPOUT_RATE = 0.2
@@ -188,7 +188,7 @@ class Cattle:
 
         return history.history['loss']
 
-    def load(self):
+    def load(self, forceZeroEpsilon=True):
         dir = './{}/data/'.format(self.name)
         if os.path.exists(dir) == False:
             os.makedirs(dir)
@@ -196,7 +196,8 @@ class Cattle:
             self.model.load_weights(dir+'model')
         if os.path.isfile(dir+'epsilon'):
             self.epsilon = pickle.load(open(dir+'epsilon', 'rb'))
-        # self.epsilon = 0
+        if (forceZeroEpsilon):
+            self.epsilon = 0
 
     def save(self):
         dir = './{}/data/'.format(self.name)
