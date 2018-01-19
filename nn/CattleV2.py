@@ -157,7 +157,6 @@ class Cattle:
         nbDataPoint = 0
         for k in training_per_ship:
             for state, action_taken, reward, next_state in training_per_ship[k]:
-                print("Gathering data for batch :%d", nbDataPoint)
                 state_batch.append(state)
                 targets[nbDataPoint] = self.forcePredict(state)
 
@@ -169,7 +168,7 @@ class Cattle:
 
                 nbDataPoint += 1
 
-        print("Done gathering data for batch")
+        print("Done gathering data for batch.  Datapoints: %d", nbDataPoint)
 
         print("Fitting the model")
         # callbacks = [EarlyStop(monitor='loss', value=0.0021, verbose=1), TensorBoard(write_images=True, log_dir='./logs/'+strategy+'/'+filename]
@@ -197,7 +196,7 @@ class Cattle:
         if os.path.isfile(dir+'epsilon'):
             self.epsilon = pickle.load(open(dir+'epsilon', 'rb'))
         if (forceZeroEpsilon):
-            self.epsilon = 0
+            self.epsilon = self.epsilon_min
 
     def save(self):
         dir = './{}/data/'.format(self.name)

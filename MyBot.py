@@ -8,7 +8,7 @@ import copy
 import pickle
 import os
 import numpy
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1' 
+# os.environ['CUDA_VISIBLE_DEVICES'] = '-1' 
 
 def load(dirAndFile):
     # if os.path.exists(dirAndFile) == False:
@@ -23,6 +23,8 @@ def save(dataToSave, dirAndFile):
     pickle.dump(dataToSave, open(dirAndFile, 'wb'))
 
 nbTurn = 0
+
+NO_ACTION_PENALTY = -5
 try:
     import hlt
     import logging
@@ -65,8 +67,8 @@ try:
         game_map = game.update_map()
         nbTurn += 1
 
-        reward = nnutils.getReward(old_map, game_map)
-        totalRewards.append(reward)
+        overallReward = nnutils.getReward(old_map, game_map)
+        totalRewards.append(overallReward)
 
         currentProduction, nbShips, health = nnutils.getFriendlyObservation(game_map)
         enemyProduction, nbEnemyShips, enemyHealth = nnutils.getEnemyObservation(game_map)
@@ -95,9 +97,14 @@ try:
             actions = cattle.predict(ship_state, ship, game_map)
             action_taken = np.argmax(actions)
 
-            cattle.rememberNextState(ship.id, ship_state, action_taken, reward)
+            reward = overallReward
 
             command = nnutils.getCommand(game_map, ship, actions, observations)
+            if command == None:
+                reward -= NO_ACTION_PENALTY
+
+            cattle.rememberNextState(ship.id, ship_state, action_taken, reward)
+
             # logging.debug("Command: %s", command)
 
             if (command != None):

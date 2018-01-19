@@ -355,13 +355,13 @@ def getCommand(game_map, myShip, action_prediction, observations):
         planet = planets[planetIndex]
 
         if planet != None:
-            if myShip.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
+            if myShip.can_dock(planet):
                 return myShip.dock(planet)
             
             return myShip.navigate(
                 myShip.closest_point_to(planet),
                 game_map,
-                speed=int(hlt.constants.MAX_SPEED/2),
+                speed=int(hlt.constants.MAX_SPEED),
                 ignore_ships=False)
     else:
         otherShips = observations[ObservationIndexes.closestEnemyShips.value]
