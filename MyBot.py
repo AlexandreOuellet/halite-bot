@@ -13,12 +13,13 @@ from hlt import entity as ntt
 try:
     import hlt
     import logging
+    
+    name = sys.argv[1]
+    
+    applyRandomizedWeight = False
 
-    name = "Guylaine"
-    if len(sys.argv) != 1:
-        name = sys.argv[1]
-
-    MEMORY_FILENAME = str(time.time() * 1000)
+    if len(sys.argv) >= 3:
+        applyRandomizedWeight = sys.argv[2] == "True"
 
     game = hlt.Game(name)
     
@@ -32,8 +33,10 @@ try:
     game_map = game.map
     
 
-    guylaine = Guylaine.Guylaine("guylaine")
-    guylaine.load()
+    guylaine = Guylaine.Guylaine(name)
+    guylaine.load(applyRandomizedWeight)
+    
+    guylaine.save(applyRandomizedWeight)
 
     command_queue = []
 
@@ -51,18 +54,26 @@ try:
         for ship in game_map.get_me().all_ships():
             command = None
 
+            
             target = guylaine.predict(ship, game_map)
-            if type(target) is ntt.Planet:
-                ship.can_dock(target)
+            logging.debug("target: %s", target)
+            speed = hlt.constants.MAX_SPEED
+            distance_remaining = ship.calculate_distance_between(target)
+            if distance_remaining < speed:
+                speed = distance_remaining / 2
+            
+            if ship.can_dock(target):
+                logging.debug("target is planet, docking")
                 command = ship.dock(target)
             else:
                 command = ship.navigate(
                     ship.closest_point_to(target),
                     game_map,
-                    speed=int(hlt.constants.MAX_SPEED),
+                    speed=int(speed),
                     ignore_ships=False)
 
             if (command != None):
+                logging.debug("Command: %s", command)
                 command_queue.append(command)
             
         game.send_command_queue(command_queue)
