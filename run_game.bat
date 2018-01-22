@@ -1,22 +1,24 @@
 del *.log /Q
 del *.hlt /Q
 
-REM FOR /L %%A IN (1,1,100) DO (
+halite.exe -d "240 160" "python MyBot.py 1 True" "python MyBot.py 2 True"
+
+REM REM FOR /L %%A IN (1,1,100) DO (
+REM REM   halite.exe -d "240 160" "python MyBot.py G2" "python MyBot.py G2"
+REM REM   REM ping localhost -n 1
+REM REM   REM python train.py
+REM REM )
+
+REM REM python train.py
+
+REM FOR /L %%A IN (1,1,20) DO (
 REM   halite.exe -d "240 160" "python MyBot.py G2" "python MyBot.py G2"
 REM   REM ping localhost -n 1
-REM   REM python train.py
+REM   python train.py
 REM )
 
-REM python train.py
-
-FOR /L %%A IN (1,1,20) DO (
-  halite.exe -d "240 160" "python MyBot.py G2" "python MyBot.py G2"
-  REM ping localhost -n 1
-  python train.py
-)
-
-FOR /L %%A IN (1,1,20000) DO (
-  halite.exe -d "240 160" "python MyBot.py G2" "python MyBot.py G2"
-  REM ping localhost -n 1
-  python train.py True
-)
+REM FOR /L %%A IN (1,1,20000) DO (
+REM   halite.exe -d "240 160" "python MyBot.py G2" "python MyBot.py G2"
+REM   REM ping localhost -n 1
+REM   python train.py True
+REM )
