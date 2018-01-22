@@ -4,7 +4,9 @@ import logging
 import numpy as np
 import string
 import math
+import random
 from enum import Enum
+from operator import itemgetter
 
 class ObservationIndexes(Enum):
     closestFriendlyPlanets = 0
@@ -19,7 +21,7 @@ class ObservationIndexes(Enum):
 
 null_ship_state = [0, 0, 0, 0, 0, 0, 0]
 null_planet_state = [0, 0, 0, 0, 0, 0, 0]
-input_size = 1 + len(null_ship_state) + len(null_planet_state) * 5 * 3 + len(null_ship_state) * 5 * 2 + 6
+input_size = 1 + len(null_ship_state) + len(null_planet_state) * 5 * 3 + len(null_ship_state) * 5 * 2 + 6 + 1
 output_size = 15 # dock/undock/nothing
 
 def getReward(map1, map2):
@@ -91,19 +93,19 @@ def _getReward(map):
             totalShips[player.id] += 1
             totalShipsHealth[player.id] += ship.health
 
-    # nbShips = np.sum(totalShips)
+    nbShips = np.sum(totalShips)
     # totalShipReward = (totalShips[myId] - (nbShips - totalShips[myId])) / nbShips
-    # totalShipReward = totalShips[myId] - (nbShips - totalShips[myId])
-    totalShipReward = totalShips[myId]
+    totalShipReward = totalShips[myId] - (nbShips - totalShips[myId])
+    # totalShipReward = totalShips[myId]
 
-    # nbShipHealth = np.sum(totalShipsHealth)
-    # shipHealthReward = totalShipsHealth[myId] - (nbShipHealth - totalShipsHealth[myId])
-    shipHealthReward = totalShipsHealth[myId] / (255)
+    nbShipHealth = np.sum(totalShipsHealth)
+    shipHealthReward = totalShipsHealth[myId]/255 - ((nbShipHealth - totalShipsHealth[myId])/255)
+    # shipHealthReward = totalShipsHealth[myId] / (255)
 
     productionSpeedReward = np.sum(productionSpeedPerPlayer)
     if productionSpeedReward != 0:
-        # productionSpeedReward = productionSpeedPerPlayer[myId] - (productionSpeedReward - productionSpeedPerPlayer[myId])
-        productionSpeedReward = productionSpeedPerPlayer[myId]
+        productionSpeedReward = productionSpeedPerPlayer[myId] - (productionSpeedReward - productionSpeedPerPlayer[myId])
+        # productionSpeedReward = productionSpeedPerPlayer[myId]
 
     logging.debug("totalShipReward %s",  totalShipReward)
     logging.debug("shipHealthReward %s",  shipHealthReward)
@@ -116,12 +118,12 @@ def _getReward(map):
 def observe(map, ship):
     myId = map.get_me().id
     allEntity = map.nearby_entities_by_distance(ship)
+    keysByDistance = sorted(allEntity.keys(), reverse=False)
 
     planets = []
-    for distance,entities in allEntity.items():
-        candidates = [entity for entity in entities if type(entity) is ntt.Planet]
-        for candidate in candidates:
-            planets.append(candidate)
+    for k in keysByDistance:
+        for entity in [entity for entity in allEntity[k] if type(entity) is ntt.Planet]:
+            planets.append(entity)
 
     neutralPlanets = []
     friendlyPlanets = []
@@ -129,16 +131,15 @@ def observe(map, ship):
     for entity in planets:
         if entity.owner == None:
             neutralPlanets.append(entity)
-        elif entity.owner == myId:
+        elif entity.owner.id == myId:
             friendlyPlanets.append(entity)
         else:
             enemyPlanets.append(entity)
 
     ships = []
-    for distance,entities in allEntity.items():
-        candidates = [entity for entity in entities if type(entity) is ntt.Ship]
-        for candidate in candidates:
-            ships.append(candidate)
+    for k in keysByDistance:
+        for entity in [entity for entity in allEntity[k] if type(entity) is ntt.Ship]:
+            ships.append(entity)
 
     ships = np.array(ships)
     ships = ships.flatten()
@@ -191,6 +192,8 @@ def createStateFromObservations(nbTurn, myShip, observations,
     allStates.append(nbEnemyShips)
     allStates.append(enemyHealth)
 
+    allStates.append(random.uniform(0, 1))
+
     npAllStates = np.array(allStates)
     
     return npAllStates
@@ -237,12 +240,12 @@ def _getPlanetState(myShip, planet):
         
         state = np.append(state, 0)
 
-        if planet.owner != myId:
+        if planet.owner.id != myId:
             state = np.append(state, 1)
         else:
             state = np.append(state, 0)
 
-        if planet.owner == myId:
+        if planet.owner.id == myId:
             state = np.append(state, 1)
         else:
             state = np.append(state, 0)
@@ -304,47 +307,79 @@ def getCommand(game_map, myShip, action_prediction, observations):
     # move towards 2nd closest enemy ship
     # move towards ...5th closest enemy ship
 
-    command = None
     action = np.argmax(action_prediction)
+    # if action == 0:
+    #     logging.debug("Colonizing 1st closest friendly planet")
+    # if action == 1:
+    #     logging.debug("Colonizing 2nd closest friendly planet")
+    # if action == 2:
+    #     logging.debug("Colonizing 3rd closest friendly planet")
+    # if action == 3:
+    #     logging.debug("Colonizing 4th closest friendly planet")
+    # if action == 4:
+    #     logging.debug("Colonizing 5th closest friendly planet")
+    # if action == 5:
+    #     logging.debug("Colonizing 1st closest empty planet")
+    # if action == 6:
+    #     logging.debug("Colonizing 2nd closest empty planet")
+    # if action == 7:
+    #     logging.debug("Colonizing 3rd closest empty planet")
+    # if action == 8:
+    #     logging.debug("Colonizing 4th closest empty planet")
+    # if action == 9:
+    #     logging.debug("Colonizing 5th closest empty planet")
+    # if action == 10:
+    #     logging.debug("Attacking 1st closest enemy ship")
+    # if action == 11:
+    #     logging.debug("Attacking 2nd closest enemy ship")
+    # if action == 12:
+    #     logging.debug("Attacking 3rd closest enemy ship")
+    # if action == 13:
+    #     logging.debug("Attacking 4th closest enemy ship")
+    # if action == 14:
+    #     logging.debug("Attacking 5th closest enemy ship")
+
     if action < 10: # colonize 1st closest friendly planet
-        
+
         if action < 5:
             planets = observations[ObservationIndexes.closestFriendlyPlanets.value]
-        else:
+        if action >= 5:
             planets = observations[ObservationIndexes.closestEmptyPlanets.value]
+
+        # logging.debug("Planets to colonize : %s", planets)
 
         planetIndex = action % 5
         if len(planets) <= planetIndex:
-            return command
+            return None
 
         planet = planets[planetIndex]
 
         if planet != None:
-            if myShip.can_dock(planet) and planet.num_docking_spots > (planet.current_production / 6):
+            if myShip.can_dock(planet):
                 return myShip.dock(planet)
             
-            command = navigate_command = myShip.navigate(
+            return myShip.navigate(
                 myShip.closest_point_to(planet),
                 game_map,
-                speed=int(hlt.constants.MAX_SPEED/2),
-                ignore_ships=True)
+                speed=int(hlt.constants.MAX_SPEED),
+                ignore_ships=False)
     else:
         otherShips = observations[ObservationIndexes.closestEnemyShips.value]
-        logging.debug("otherShips : %s", otherShips)
+        # logging.debug("enemyShips : %s", otherShips)
         shipIndex = action - 10
         if len(otherShips) <= shipIndex:
-            return command
+            return None
 
         otherShip = otherShips[action - 10]
         if otherShip == None:
-            return command
+            return None
 
-        command = navigate_command = myShip.navigate(
+        return myShip.navigate(
                 otherShip,
                 game_map,
                 speed=int(hlt.constants.MAX_SPEED/2),
                 ignore_ships=True)
-    return command
+    return None
 
 def flatten(S):
     if S == []:
