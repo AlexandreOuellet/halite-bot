@@ -37,14 +37,14 @@ import logging
 LEARNING_RATE = 0.01
 
 class Guylaine:
-    def __init__(self, name, planetWeights=[], shipWeights=[]):
+    def __init__(self, version, planetWeights=[], shipWeights=[]):
         if len(planetWeights) == 0:
-            planetWeights = np.random.rand(8)
-        self.planetWeights = planetWeights # [distance, friendly, enemy, neutral, health, availableDockingSpot, enemeyDockedShip, friendlyDockedShip]
+            planetWeights = np.random.rand(9)
+        self.planetWeights = planetWeights # [distance, friendly, enemy, neutral, distanceSquared, health, availableDockingSpot, enemeyDockedShip, friendlyDockedShip]
         if len(shipWeights) == 0:
             shipWeights = np.random.rand(8)
         self.shipWeights = shipWeights # [distance, friendly, enemy, neutral, health, distanceSquared, docked, undocked]
-        self.name = name
+        self.version = int(version)
         
     def predict(self, ship, game_map):
         myId = game_map.get_me().id
@@ -61,6 +61,7 @@ class Guylaine:
                     planetState.append(0)
                     planetState.append(0)
                     planetState.append(1)
+                    planetState.append(1/(k*k))
                     planetState.append(entity.health)
                     planetState.append(entity.num_docking_spots)
                     planetState.append(0)
@@ -69,6 +70,7 @@ class Guylaine:
                     planetState.append(1)
                     planetState.append(0)
                     planetState.append(0)
+                    planetState.append(1/(k*k))
                     planetState.append(entity.health)
                     planetState.append(entity.num_docking_spots)
                     planetState.append(0)
@@ -77,14 +79,13 @@ class Guylaine:
                     planetState.append(0)
                     planetState.append(1)
                     planetState.append(0)
+                    planetState.append(1/(k*k))
                     planetState.append(entity.health)
                     planetState.append(entity.num_docking_spots)
                     planetState.append(len(entity.all_docked_ships()))
                     planetState.append(0)
 
 
-                logging.debug("planetWeights: %s", self.planetWeights)
-                logging.debug("planetState: %s", planetState)
                 assert len(self.planetWeights) == len(planetState)
 
                 value = 0
@@ -103,14 +104,11 @@ class Guylaine:
                 shipState = []
                 shipState.append(k)
                 if entity.owner.id == myId:
-                    logging.debug("FriendlyShip: %s", entity)
                     shipState.append(1)
                     shipState.append(0)
                     shipState.append(0)
-                    logging.debug("entity.health: %s", entity.health)
                     shipState.append(entity.health)
-                    shipState.append(k*k)
-                    logging.debug("entity.DockingStatus: %s", entity.DockingStatus)
+                    shipState.append(1/(k*k))
                     if (entity.DockingStatus == ntt.Ship.DockingStatus.DOCKED):
                         shipState.append(1)
                         shipState.append(0)
@@ -118,14 +116,11 @@ class Guylaine:
                         shipState.append(0)
                         shipState.append(1)
                 else:
-                    logging.debug("EnemyShip: %s", entity)
                     shipState.append(0)
                     shipState.append(1)
                     shipState.append(0)
-                    logging.debug("entity.health: %s", entity.health)
                     shipState.append(entity.health)
-                    shipState.append(k*k)
-                    logging.debug("entity.DockingStatus: %s", entity.DockingStatus)
+                    shipState.append(1/(k*k))
                     if (entity.DockingStatus == ntt.Ship.DockingStatus.DOCKED):
                         shipState.append(1)
                         shipState.append(0)
@@ -133,9 +128,8 @@ class Guylaine:
                         shipState.append(0)
                         shipState.append(1)
 
-
-                logging.debug("shipWeights: %s", self.shipWeights)
-                logging.debug("shipState: %s",shipState)
+                # logging.debug("shipWeights :%s", self.shipWeights)
+                # logging.debug("shipState :%s", shipState)
                 assert len(self.shipWeights) == len(shipState)
 
                 value = 0
@@ -160,7 +154,7 @@ class Guylaine:
 
 
     def load(self, randomize=True):
-        dir = './{}/data/'.format(self.name)
+        dir = './v/{}/'.format(self.version)
         if os.path.exists(dir) == False:
             os.makedirs(dir)
         if os.path.isfile(dir+'planetWeights'):
@@ -176,8 +170,11 @@ class Guylaine:
                 rand = ((random.random()-0.5)  * 2) * LEARNING_RATE
                 self.shipWeights[i] += rand
 
-    def save(self):
-        dir = './{}/data/'.format(self.name)
+    def save(self, newVersion):
+        if newVersion:
+            self.version += 1
+        dir = './v/{}/'.format(self.version)
+        
         if os.path.exists(dir) == False:
             os.makedirs(dir)
         pickle.dump(self.planetWeights, open(dir+'planetWeights', 'wb'))
