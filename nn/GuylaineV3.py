@@ -142,6 +142,7 @@ class Guylaine:
     
 
         keysByValue = sorted(entityIdByValue.keys(), reverse=True)
+        # logging.debug("Highest Key: %s, %s", keysByValue[0], keysByValue[len(keysByValue)-1])
         entity = entityIdByValue[keysByValue[0]]
 
         # target = sorted_x[0]
