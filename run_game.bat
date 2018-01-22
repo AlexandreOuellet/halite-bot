@@ -2,6 +2,7 @@ del *.log /Q
 del *.hlt /Q
 
 halite.exe -d "240 160" "python MyBot.py 1 True" "python MyBot.py 2 True"
+REM python ./client.py gym -r "python MyBot.py 1" -r "python MyBot.py 2" -b "./halite.exe" -i 10 -H 240 -W 160
 
 REM REM FOR /L %%A IN (1,1,100) DO (
 REM REM   halite.exe -d "240 160" "python MyBot.py G2" "python MyBot.py G2"
