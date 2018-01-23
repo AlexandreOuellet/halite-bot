@@ -67,7 +67,8 @@ try:
                     # logging.debug("target is planet, docking")
                     command = ship.dock(target)
                 else:
-                    
+                    if target.owner != None and target.owner.id != game_map.get_me().id:
+                        target = target.all_docked_ships()[0]
                     command = ship.navigate(
                         ship.closest_point_to(target),
                         game_map,
