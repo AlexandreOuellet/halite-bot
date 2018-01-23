@@ -51,3 +51,5 @@ def play_games(binary, map_width, map_height, bot_commands, number_of_runs):
         result[winner] = result.setdefault(winner, 0) + 1
         print("Finished {} runs.".format(current_run + 1))
         print("Win Ratio: {}".format(result))
+
+    return result

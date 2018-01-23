@@ -34,7 +34,7 @@ import os.path
 import time
 import logging
 
-LEARNING_RATE = 0.01
+LEARNING_RATE = 1
 
 class Guylaine:
     def __init__(self, version, planetWeights=[], shipWeights=[]):
@@ -45,14 +45,15 @@ class Guylaine:
             shipWeights = np.random.rand(8)
         self.shipWeights = shipWeights # [distance, friendly, enemy, neutral, health, distanceSquared, docked, undocked]
 
-        self.planetWeights = [10, 0.5, 0.5, 10, 100, 0.5, 1, 1, 1]
+        # self.planetWeights = [1, 1, 1, 2, 1, 1, 1, 1, 1]
+        # shipWeights = [1, 1, 1, 1, 1, 1, 1, 1, 1]
         self.version = int(version)
         
     def predict(self, ship, game_map):
 
         # logging.debug("ship.DockingStatus.value:  %s", ship.DockingStatus)
-        if ship.DockingStatus == ntt.Ship.DockingStatus.DOCKED.value or ship.DockingStatus == ntt.Ship.DockingStatus.DOCKING.value:
-            logging.debug("Skipping docked Ship")
+        if ship.docking_status == ntt.Ship.DockingStatus.DOCKED or ship.docking_status == ntt.Ship.DockingStatus.DOCKING:
+            # logging.debug("Skipping docked Ship")
             return None
         myId = game_map.get_me().id
 
@@ -171,7 +172,7 @@ class Guylaine:
         return entity
 
 
-    def load(self, randomize=True):
+    def load(self, randomize=False):
         dir = './v/{}/'.format(self.version)
         if os.path.exists(dir) == False:
             os.makedirs(dir)
@@ -187,6 +188,9 @@ class Guylaine:
             for i in range(0, len(self.shipWeights)):
                 rand = ((random.random()-0.5)  * 2) * LEARNING_RATE
                 self.shipWeights[i] += rand
+
+        logging.debug("self.planetWeights: %s", self.planetWeights)
+        logging.debug("self.shipWeights: %s", self.shipWeights)
 
     def save(self, newVersion):
         if newVersion:

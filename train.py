@@ -1,44 +1,49 @@
-"""This is to be executed after there are some data within ./data/memory/."""
-
-import os
-import nn.CattleV2 as Cattle
-import nnutils
-import matplotlib.pyplot as plt
-import pylab
-import pickle
+import generate_weights as gw
+import compare_bots
 import sys
 
-# os.environ['CUDA_VISIBLE_DEVICES'] = '-1' 
-name = 'G2'
-CATTLE = cattle = Cattle.Cattle((nnutils.input_size,), nnutils.output_size, name)
+CURRENT_VERSION = 33
 
-# guylaine.load()
-history_losses = []
 
-train_with_epsilon = len(sys.argv) != 1
-print("training with epsilon decay : %s", train_with_epsilon)
+class RedirectStdStreams(object):
+    def __init__(self, stdout=None, stderr=None):
+        self._stdout = stdout or sys.stdout
+        self._stderr = stderr or sys.stderr
 
-dir = "./{}/".format(name)
-if os.path.isfile(dir + 'loss_historyv2'):
-    history_losses = pickle.load(open(dir + 'loss_historyv2', 'rb'))
+    def __enter__(self):
+        self.old_stdout, self.old_stderr = sys.stdout, sys.stderr
+        self.old_stdout.flush(); self.old_stderr.flush()
+        sys.stdout, sys.stderr = self._stdout, self._stderr
 
-for file in os.listdir(dir + 'memory/'):
-    fullFile = os.path.join(dir + "memory/", file)
-    print("Opening file %s", file)
-    CATTLE.load(False)
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._stdout.flush(); self._stderr.flush()
+        sys.stdout = self.old_stdout
+        sys.stderr = self.old_stderr
 
-    CATTLE.loadMemory(file)
-    losses = CATTLE.replay(32, 200, file, train_with_epsilon)
-    for loss in losses:
-        history_losses.append(loss)
+# devnull = open(os.devnull, 'w')
 
-    CATTLE.save()
-    pickle.dump(history_losses, open(dir + 'loss_historyv2', 'wb'))
+# with RedirectStdStreams(stdout=devnull, stderr=devnull):
+key0 = "#0,"
+key1 = "#1,"
+if __name__ == "__main__":
+    # version = int(sys.argv[1])
+    # randomize_weight(version)
+    halite_binary = "./halite.exe"
+    best_version = CURRENT_VERSION
+    contender = best_version + 1
+    while True:
+        gw.randomize_weight(best_version)
+        run_commands = ["python MyBot.py {}".format(best_version), "python MyBot.py {}".format(contender)]
+        # with RedirectStdStreams(stdout=devnull):
+        results = compare_bots.play_games(halite_binary,
+                                160, 240,
+                                run_commands, 7)
+        if key1 not in results:
+            continue
+            
+        elif key0 not in results or results["#1,"] > results["#0,"]:
+            best_version = contender
+            print("NEW BEST VERSION! : ", best_version)
 
-    os.remove(fullFile)
-
-# plt.plot(history_losses)
-# plt.title('model loss')
-# plt.ylabel('loss')
-# plt.xlabel('epoch')
-# plt.show()
+        contender = best_version + 1        
+        

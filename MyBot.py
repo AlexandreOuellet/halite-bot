@@ -32,7 +32,7 @@ try:
 
     game_map = game.map
 
-    MAX_COMMAND = 50
+    MAX_COMMAND = 10
     
 
     guylaine = Guylaine.Guylaine(name)
@@ -56,34 +56,34 @@ try:
         for ship in game_map.get_me().all_ships():
             command = None
             if nbCommand >= MAX_COMMAND:
-                continue
-            
+                logging.debug("maxCommand, skipping the rests")
+                break
+
             target = guylaine.predict(ship, game_map)
-            logging.debug("target: %s", target)
-            distance_remaining = ship.calculate_distance_between(ship.closest_point_to(target))
 
             if type(target) is ntt.Planet:
                 # logging.debug("target is planet, distance : %s", distance_remaining)
                 if ship.can_dock(target):
-                    logging.debug("target is planet, docking")
+                    # logging.debug("target is planet, docking")
                     command = ship.dock(target)
                 else:
                     
                     command = ship.navigate(
-                        target,
+                        ship.closest_point_to(target),
                         game_map,
-                        speed=int(hlt.constants.MAX_SPEED/2),
+                        speed=int(hlt.constants.MAX_SPEED),
                         ignore_ships=False)
-                    logging.debug("navigating closer, command: %s", command)
+                    # logging.debug("navigating closer, command: %s", command)
 
 
             elif target != None:
                 command = ship.navigate(
                     ship.closest_point_to(target),
                     game_map,
-                    speed=int(hlt.constants.MAX_SPEED/2),
+                    speed=int(hlt.constants.MAX_SPEED),
                     ignore_ships=False)
 
+            logging.debug("Command: %s", command)
             if (command != None):
                 nbCommand += 1
                 command_queue.append(command)
