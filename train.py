@@ -2,7 +2,7 @@ import generate_weights as gw
 import compare_bots
 import sys
 
-CURRENT_VERSION = 33
+CURRENT_VERSION = 54
 
 
 class RedirectStdStreams(object):
