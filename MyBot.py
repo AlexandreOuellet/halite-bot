@@ -31,6 +31,8 @@ try:
     from nn import starterBot
 
     game_map = game.map
+
+    MAX_COMMAND = 50
     
 
     guylaine = Guylaine.Guylaine(name)
@@ -50,17 +52,18 @@ try:
             game.send_command_queue(command_queue)
             continue
 
-        # Get State
+        nbCommand = 0
         for ship in game_map.get_me().all_ships():
             command = None
-
+            if nbCommand >= MAX_COMMAND:
+                continue
             
             target = guylaine.predict(ship, game_map)
             logging.debug("target: %s", target)
             distance_remaining = ship.calculate_distance_between(ship.closest_point_to(target))
 
             if type(target) is ntt.Planet:
-                logging.debug("target is planet, distance : %s", distance_remaining)
+                # logging.debug("target is planet, distance : %s", distance_remaining)
                 if ship.can_dock(target):
                     logging.debug("target is planet, docking")
                     command = ship.dock(target)
@@ -74,7 +77,7 @@ try:
                     logging.debug("navigating closer, command: %s", command)
 
 
-            else:
+            elif target != None:
                 command = ship.navigate(
                     ship.closest_point_to(target),
                     game_map,
@@ -82,7 +85,7 @@ try:
                     ignore_ships=False)
 
             if (command != None):
-                logging.debug("Command: %s", command)
+                nbCommand += 1
                 command_queue.append(command)
             
         game.send_command_queue(command_queue)

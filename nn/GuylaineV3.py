@@ -40,29 +40,41 @@ class Guylaine:
     def __init__(self, version, planetWeights=[], shipWeights=[]):
         if len(planetWeights) == 0:
             planetWeights = np.random.rand(9)
-        self.planetWeights = planetWeights # [distance, friendly, enemy, neutral, distanceSquared, health, availableDockingSpot, enemeyDockedShip, friendlyDockedShip]
+        self.planetWeights = planetWeights # [distance, friendly, enemy, neutral, distanceSquared, health, NeutralCapacity, enemeyDockedShip, friendlyDockedShip]
         if len(shipWeights) == 0:
             shipWeights = np.random.rand(8)
         self.shipWeights = shipWeights # [distance, friendly, enemy, neutral, health, distanceSquared, docked, undocked]
+
+        self.planetWeights = [10, 0.5, 0.5, 10, 100, 0.5, 1, 1, 1]
         self.version = int(version)
         
     def predict(self, ship, game_map):
+
+        # logging.debug("ship.DockingStatus.value:  %s", ship.DockingStatus)
+        if ship.DockingStatus == ntt.Ship.DockingStatus.DOCKED.value or ship.DockingStatus == ntt.Ship.DockingStatus.DOCKING.value:
+            logging.debug("Skipping docked Ship")
+            return None
         myId = game_map.get_me().id
 
         allEntities = game_map.nearby_entities_by_distance(ship)
         keysByDistance = sorted(allEntities.keys(), reverse=False)
+        minPoint = ntt.Position(0, 0)
+        maxPoint = ntt.Position(game_map.width - 1, game_map.height - 1)
+
+        maxDistance = maxPoint.calculate_distance_between(minPoint)
 
         entityIdByValue = {}
         for k in keysByDistance:
             for entity in [entity for entity in allEntities[k] if type(entity) is ntt.Planet]:
                 planetState = []
-                planetState.append(k)
+                normalizedDistance = k/maxDistance
+                planetState.append(1 - normalizedDistance)
                 if entity.owner == None:
                     planetState.append(0)
                     planetState.append(0)
                     planetState.append(1)
-                    planetState.append(1/(k*k))
-                    planetState.append(entity.health)
+                    planetState.append(1 - (normalizedDistance * normalizedDistance))
+                    planetState.append(entity.health / (entity.radius * 255))
                     planetState.append(entity.num_docking_spots)
                     planetState.append(0)
                     planetState.append(0)
@@ -70,20 +82,22 @@ class Guylaine:
                     planetState.append(1)
                     planetState.append(0)
                     planetState.append(0)
-                    planetState.append(1/(k*k))
-                    planetState.append(entity.health)
+                    planetState.append(1-(normalizedDistance*normalizedDistance))
+                    planetState.append(entity.health / (entity.radius * 255))
                     planetState.append(entity.num_docking_spots)
                     planetState.append(0)
-                    planetState.append(len(entity.all_docked_ships()))
+                    planetState.append(entity.num_docking_spots - (len(entity.all_docked_ships()) / entity.num_docking_spots))
                 else:
                     planetState.append(0)
                     planetState.append(1)
                     planetState.append(0)
-                    planetState.append(1/(k*k))
-                    planetState.append(entity.health)
+                    planetState.append(1 - (normalizedDistance*normalizedDistance))
+                    planetState.append(entity.health / (entity.radius * 255))
                     planetState.append(entity.num_docking_spots)
-                    planetState.append(len(entity.all_docked_ships()))
+                    planetState.append(entity.num_docking_spots - (len(entity.all_docked_ships()) / entity.num_docking_spots))
                     planetState.append(0)
+
+                    
 
 
                 assert len(self.planetWeights) == len(planetState)
@@ -102,14 +116,17 @@ class Guylaine:
                 if entity.id == ship.id:
                     continue
                 shipState = []
-                shipState.append(k)
+                
+                normalizedDistance = k/maxDistance
+
+                shipState.append(1 - normalizedDistance)
                 if entity.owner.id == myId:
                     shipState.append(1)
                     shipState.append(0)
                     shipState.append(0)
-                    shipState.append(entity.health)
-                    shipState.append(1/(k*k))
-                    if (entity.DockingStatus == ntt.Ship.DockingStatus.DOCKED):
+                    shipState.append(entity.health/255)
+                    shipState.append(1-(normalizedDistance*normalizedDistance))
+                    if (entity.DockingStatus == ntt.Ship.DockingStatus.DOCKED.value):
                         shipState.append(1)
                         shipState.append(0)
                     else:
@@ -119,9 +136,9 @@ class Guylaine:
                     shipState.append(0)
                     shipState.append(1)
                     shipState.append(0)
-                    shipState.append(entity.health)
-                    shipState.append(1/(k*k))
-                    if (entity.DockingStatus == ntt.Ship.DockingStatus.DOCKED):
+                    shipState.append(entity.health/255)
+                    shipState.append(1-(normalizedDistance*normalizedDistance))
+                    if (entity.DockingStatus == ntt.Ship.DockingStatus.DOCKED.value):
                         shipState.append(1)
                         shipState.append(0)
                     else:
