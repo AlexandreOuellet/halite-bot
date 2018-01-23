@@ -14,12 +14,15 @@ try:
     import hlt
     import logging
     
-    name = sys.argv[1]
+    name = "Guylaine"
+    if len(sys.argv) >= 2:
+        name = sys.argv[1]
+    version = 54
     
     applyRandomizedWeight = False
 
-    if len(sys.argv) >= 3:
-        applyRandomizedWeight = sys.argv[2] == "True"
+    # if len(sys.argv) >= 3:
+    #     applyRandomizedWeight = sys.argv[2] == "True"
 
     game = hlt.Game(name)
     
@@ -35,7 +38,7 @@ try:
     MAX_COMMAND = 10
     
 
-    guylaine = Guylaine.Guylaine(name)
+    guylaine = Guylaine.Guylaine(version)
     guylaine.load(applyRandomizedWeight)
     
     guylaine.save(applyRandomizedWeight)
@@ -44,13 +47,22 @@ try:
 
     while True:
         command_queue.clear()
-
         # advance the simulation 1 step
         game_map = game.update_map()
 
-        if len(sys.argv) == 1: # nullbot
+
+        
+        if len(sys.argv) == 2 and sys.argv[1] == "starterbot":
+            for ship in game_map.get_me().all_ships():
+                command = starterBot.predictStarterBot(ship, game_map)
+                if command != None:
+                    command_queue.append(command)
+
             game.send_command_queue(command_queue)
             continue
+        # if len(sys.argv) == 1: # nullbot
+        #     game.send_command_queue(command_queue)
+        #     continue
 
         nbCommand = 0
         for ship in game_map.get_me().all_ships():
