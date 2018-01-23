@@ -75,7 +75,7 @@ try:
 
             if type(target) is ntt.Planet:
                 # logging.debug("target is planet, distance : %s", distance_remaining)
-                if ship.can_dock(target):
+                if ship.can_dock(target) and len(target.all_docked_ships()) < target.num_docking_spots:
                     # logging.debug("target is planet, docking")
                     command = ship.dock(target)
                 else:
