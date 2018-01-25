@@ -1,28 +1,6 @@
-import pickle
-import numpy as np
-import os
-
-# [distance, friendly, enemy, neutral, distanceSquared, health, NeutralCapacity, enemeyDockedShip, friendlyDockedShip]
-planetWeights = np.random.rand(9)
-
-# [distance, friendly, enemy, neutral, health, distanceSquared, docked, undocked]
-shipWeights = np.random.rand(8)
-
-LEARNING_RATE = 1
-
-for i in range(0, len(planetWeights)):
-    rand = ((random.random()-0.5)  * 2) * LEARNING_RATE
-    planetWeights[i] = rand
-for i in range(0, len(shipWeights)):
-    rand = ((random.random()-0.5)  * 2) * LEARNING_RATE
-    shipWeights[i] = rand
-
-
-version = 0
-dir = './v/{}/'.format(version)
-    
-if os.path.exists(dir) == False:
-    os.makedirs(dir)
-pickle.dump(planetWeights, open(dir+'planetWeights', 'wb'))
-pickle.dump(shipWeights, open(dir+'shipWeights', 'wb'))
-
+import sys, traceback, threading
+thread_names = {t.ident: t.name for t in threading.enumerate()}
+for thread_id, frame in sys._current_frames().items():
+    print("Thread %s:" % thread_names.get(thread_id, thread_id))
+    traceback.print_stack(frame)
+    print()

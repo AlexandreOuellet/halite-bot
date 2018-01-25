@@ -5,7 +5,6 @@ and play the game
 import time
 import sys
 import copy
-import pickle
 import os
 import numpy
 from hlt import entity as ntt
@@ -17,13 +16,7 @@ try:
     name = "Guylaine"
     if len(sys.argv) >= 2:
         name = sys.argv[1]
-    version = 54
-    
-    applyRandomizedWeight = False
-
-    # if len(sys.argv) >= 3:
-    #     applyRandomizedWeight = sys.argv[2] == "True"
-
+    version = name
     game = hlt.Game(name)
     
     import nnutils
@@ -35,13 +28,11 @@ try:
 
     game_map = game.map
 
-    MAX_COMMAND = 10
+    MAX_COMMAND = 25
     
 
     guylaine = Guylaine.Guylaine(version)
-    guylaine.load(applyRandomizedWeight)
-    
-    guylaine.save(applyRandomizedWeight)
+    guylaine.load()
 
     command_queue = []
 
@@ -68,35 +59,29 @@ try:
         for ship in game_map.get_me().all_ships():
             command = None
             if nbCommand >= MAX_COMMAND:
-                logging.debug("maxCommand, skipping the rests")
+                # logging.debug("maxCommand, skipping the rests")
                 break
 
             target = guylaine.predict(ship, game_map)
 
-            if type(target) is ntt.Planet:
+
+            if target != None:
                 # logging.debug("target is planet, distance : %s", distance_remaining)
-                if ship.can_dock(target) and len(target.all_docked_ships()) < target.num_docking_spots:
+                if ship.can_dock(target) and len(target.all_docked_ships()) < target.num_docking_spots and (target.owner == None or target.owner.id == game_map.get_me().id):
                     # logging.debug("target is planet, docking")
                     command = ship.dock(target)
                 else:
-                    if target.owner != None and target.owner.id != game_map.get_me().id:
+                    if target.owner != None:
                         target = target.all_docked_ships()[0]
                     command = ship.navigate(
                         ship.closest_point_to(target),
                         game_map,
                         speed=int(hlt.constants.MAX_SPEED),
-                        ignore_ships=False)
+                        ignore_ships=False,
+                        max_corrections=110)
                     # logging.debug("navigating closer, command: %s", command)
 
-
-            elif target != None:
-                command = ship.navigate(
-                    ship.closest_point_to(target),
-                    game_map,
-                    speed=int(hlt.constants.MAX_SPEED),
-                    ignore_ships=False)
-
-            logging.debug("Command: %s", command)
+            # logging.debug("Command: %s", command)
             if (command != None):
                 nbCommand += 1
                 command_queue.append(command)

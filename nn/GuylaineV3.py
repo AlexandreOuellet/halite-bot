@@ -37,13 +37,13 @@ import logging
 LEARNING_RATE = 1
 
 class Guylaine:
-    def __init__(self, version, planetWeights=[], shipWeights=[]):
+    def __init__(self, version, planetWeights=[]):
         if len(planetWeights) == 0:
             planetWeights = np.random.rand(9)
         self.planetWeights = planetWeights # [distance, friendly, enemy, neutral, distanceSquared, health, NeutralCapacity, enemeyDockedShip, friendlyDockedShip]
-        if len(shipWeights) == 0:
-            shipWeights = np.random.rand(8)
-        self.shipWeights = shipWeights # [distance, friendly, enemy, neutral, health, distanceSquared, docked, undocked]
+        # if len(shipWeights) == 0:
+        #     shipWeights = np.random.rand(8)
+        # self.shipWeights = shipWeights # [distance, friendly, enemy, neutral, health, distanceSquared, docked, undocked]
 
         # self.planetWeights = [1, 1, 1, 2, 1, 1, 1, 1, 1]
         # shipWeights = [1, 1, 1, 1, 1, 1, 1, 1, 1]
@@ -98,9 +98,6 @@ class Guylaine:
                     planetState.append(entity.num_docking_spots - (len(entity.all_docked_ships()) / entity.num_docking_spots))
                     planetState.append(0)
 
-                    
-
-
                 assert len(self.planetWeights) == len(planetState)
 
                 value = 0
@@ -111,57 +108,65 @@ class Guylaine:
 
                 entityIdByValue[value] = entity
         
-        ships = []
-        for k in keysByDistance:
-            for entity in [entity for entity in allEntities[k] if type(entity) is ntt.Ship]:
-                if entity.id == ship.id:
-                    continue
-                shipState = []
+        # ships = []
+        # for k in keysByDistance:
+        #     for entity in [entity for entity in allEntities[k] if type(entity) is ntt.Ship]:
+        #         if entity.id == ship.id:
+        #             continue
+        #         shipState = []
                 
-                normalizedDistance = k/maxDistance
+        #         normalizedDistance = k/maxDistance
 
-                shipState.append(1 - normalizedDistance)
-                if entity.owner.id == myId:
-                    shipState.append(1)
-                    shipState.append(0)
-                    shipState.append(0)
-                    shipState.append(entity.health/255)
-                    shipState.append(1-(normalizedDistance*normalizedDistance))
-                    if (entity.DockingStatus == ntt.Ship.DockingStatus.DOCKED.value):
-                        shipState.append(1)
-                        shipState.append(0)
-                    else:
-                        shipState.append(0)
-                        shipState.append(1)
-                else:
-                    shipState.append(0)
-                    shipState.append(1)
-                    shipState.append(0)
-                    shipState.append(entity.health/255)
-                    shipState.append(1-(normalizedDistance*normalizedDistance))
-                    if (entity.DockingStatus == ntt.Ship.DockingStatus.DOCKED.value):
-                        shipState.append(1)
-                        shipState.append(0)
-                    else:
-                        shipState.append(0)
-                        shipState.append(1)
+        #         shipState.append(1 - normalizedDistance)
+        #         if entity.owner.id == myId:
+        #             shipState.append(1)
+        #             shipState.append(0)
+        #             shipState.append(0)
+        #             shipState.append(entity.health/255)
+        #             shipState.append(1-(normalizedDistance*normalizedDistance))
+        #             if (entity.DockingStatus == ntt.Ship.DockingStatus.DOCKED.value):
+        #                 shipState.append(1)
+        #                 shipState.append(0)
+        #             else:
+        #                 shipState.append(0)
+        #                 shipState.append(1)
+        #         else:
+        #             shipState.append(0)
+        #             shipState.append(1)
+        #             shipState.append(0)
+        #             shipState.append(entity.health/255)
+        #             shipState.append(1-(normalizedDistance*normalizedDistance))
+        #             if (entity.DockingStatus == ntt.Ship.DockingStatus.DOCKED.value):
+        #                 shipState.append(1)
+        #                 shipState.append(0)
+        #             else:
+        #                 shipState.append(0)
+        #                 shipState.append(1)
 
-                # logging.debug("shipWeights :%s", self.shipWeights)
-                # logging.debug("shipState :%s", shipState)
-                assert len(self.shipWeights) == len(shipState)
+        #         # logging.debug("shipWeights :%s", self.shipWeights)
+        #         # logging.debug("shipState :%s", shipState)
+        #         assert len(self.shipWeights) == len(shipState)
 
-                value = 0
+        #         value = 0
                 
-                for i in range(0, len(self.shipWeights)):
-                    coef = self.shipWeights[i]
-                    value += shipState[i] * coef
+        #         for i in range(0, len(self.shipWeights)):
+        #             coef = self.shipWeights[i]
+        #             value += shipState[i] * coef
 
-                entityIdByValue[value] = entity
+        #         entityIdByValue[value] = entity
     
 
         keysByValue = sorted(entityIdByValue.keys(), reverse=True)
         # logging.debug("Highest Key: %s, %s", keysByValue[0], keysByValue[len(keysByValue)-1])
         entity = entityIdByValue[keysByValue[0]]
+
+        nbPrinted = 0
+        for value in keysByValue:
+            nbPrinted += 1
+            # logging.debug("value: %s, entity:%s", value, entityIdByValue[value])
+            if nbPrinted > 3 or len(keysByValue) == nbPrinted:
+                break
+
 
         # target = sorted_x[0]
         # entity = game_map.get_ship(target)
@@ -172,32 +177,28 @@ class Guylaine:
         return entity
 
 
-    def load(self, randomize=False):
+    def load(self):
         dir = './v/{}/'.format(self.version)
         if os.path.exists(dir) == False:
             os.makedirs(dir)
         if os.path.isfile(dir+'planetWeights'):
             self.planetWeights = pickle.load(open(dir+'planetWeights', 'rb'))
-        if os.path.isfile(dir+'shipWeights'):
-            self.shipWeights = pickle.load(open(dir+'shipWeights', 'rb'))
+        # if os.path.isfile(dir+'shipWeights'):
+        #     self.shipWeights = pickle.load(open(dir+'shipWeights', 'rb'))
 
-        if randomize:
-            for i in range(0, len(self.planetWeights)):
-                rand = ((random.random()-0.5)  * 2) * LEARNING_RATE
-                self.planetWeights[i] += rand
-            for i in range(0, len(self.shipWeights)):
-                rand = ((random.random()-0.5)  * 2) * LEARNING_RATE
-                self.shipWeights[i] += rand
+        logging.debug("self.planetWeights.distance: %s", self.planetWeights[0])
+        logging.debug("self.planetWeights.friendly: %s", self.planetWeights[1])
+        logging.debug("self.planetWeights.enemy: %s", self.planetWeights[2])
+        logging.debug("self.planetWeights.neutral: %s", self.planetWeights[3])
+        logging.debug("self.planetWeights.distanceSquared: %s", self.planetWeights[4])
+        logging.debug("self.planetWeights.health: %s", self.planetWeights[5])
+        logging.debug("self.planetWeights.neutralCapacity: %s", self.planetWeights[6])
+        logging.debug("self.planetWeights.enemeyDockedShip: %s", self.planetWeights[7])
+        logging.debug("self.planetWeights.friendlyDockedShip: %s", self.planetWeights[8])
 
-        logging.debug("self.planetWeights: %s", self.planetWeights)
-        logging.debug("self.shipWeights: %s", self.shipWeights)
-
-    def save(self, newVersion):
-        if newVersion:
-            self.version += 1
+    def save(self):
         dir = './v/{}/'.format(self.version)
         
         if os.path.exists(dir) == False:
             os.makedirs(dir)
         pickle.dump(self.planetWeights, open(dir+'planetWeights', 'wb'))
-        pickle.dump(self.shipWeights, open(dir+'shipWeights', 'wb'))
