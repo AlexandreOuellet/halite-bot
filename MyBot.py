@@ -28,7 +28,7 @@ try:
 
     game_map = game.map
 
-    MAX_COMMAND = 25
+    MAX_COMMAND = 10
     
 
     guylaine = Guylaine.Guylaine(version)
@@ -54,6 +54,9 @@ try:
         # if len(sys.argv) == 1: # nullbot
         #     game.send_command_queue(command_queue)
         #     continue
+
+        common = nnutils.CreateCommonDataFrame(game_map)
+        logging.debug(common)
 
         nbCommand = 0
         for ship in game_map.get_me().all_ships():

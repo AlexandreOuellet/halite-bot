@@ -7,6 +7,7 @@ import math
 import random
 from enum import Enum
 from operator import itemgetter
+import pandas as pd
 
 class ObservationIndexes(Enum):
     closestFriendlyPlanets = 0
@@ -387,3 +388,80 @@ def flatten(S):
     if isinstance(S[0], list):
         return flatten(S[0]) + flatten(S[1:])
     return S[:1] + flatten(S[1:])
+
+
+def _getCentroid(game_map, friendly: bool):
+    myId = game_map.get_me().id
+
+    total_x = 0
+    total_y = 0
+    nb_ships = 0
+    ships = game_map.get_me().all_ships()
+
+    if not friendly:
+        for player in game_map.all_players():
+            if player.id != myId:
+                ships = player.all_ships()
+
+    for ship in ships:
+        nb_ships += 1
+        total_x += ship.x
+        total_y += ship.y
+    return ntt.Position(total_x / nb_ships, total_y / nb_ships)
+
+def CreateCommonDataFrame(game_map):
+    logging.debug("createCommonDataFrame")
+
+    pdSerie = pd.Series(planetState)
+
+    myId = game_map.get_me().id
+
+    friendly_centroid = _getCentroid(game_map, True)
+    enemy_centroid = _getCentroid(game_map, False)
+
+    all_planets = game_map.all_planets()
+    for planet in all_planets:
+
+        id = planet.id
+        health = planet.health / (planet.radius * 255)
+        radius = planet.radius
+        num_docking_spots = planet.num_docking_spots
+        friendly_ships_docked = 0
+        enemy_ships_docked = 0
+        distance_to_friendly_centroid = planet.calculate_distance_between(friendly_centroid)
+        distance_to_enemy_centroid = planet.calculate_distance_between(enemy_centroid)
+
+        if planet.owner != None:
+            if planet.owner.id == myId:
+                friendly_ships_docked = ntity.num_docking_spots - (len(planet.all_docked_ships()) / planet.num_docking_spots)
+            else:
+                enemy_ships_docked = planet.num_docking_spots - (len(planet.all_docked_ships()) / planet.num_docking_spots)
+
+        planetState = []
+        planetState.append(id)
+
+        planetState.append(health)
+        planetState.append(health ** 2)
+
+        planetState.append(radius)
+        planetState.append(radius ** 2)
+
+        planetState.append(num_docking_spots)
+        planetState.append(num_docking_spots ** 2)
+        
+        planetState.append(friendly_ships_docked)
+        planetState.append(friendly_ships_docked ** 2)
+
+        planetState.append(enemy_ships_docked)
+        planetState.append(enemy_ships_docked ** 2)
+
+        planetState.append(distance_to_friendly_centroid)
+        planetState.append(distance_to_friendly_centroid ** 2)
+
+        planetState.append(distance_to_enemy_centroid)
+        planetState.append(distance_to_enemy_centroid ** 2)
+
+        pdSerie.append(planetState,)
+    
+    return pdSerie
+

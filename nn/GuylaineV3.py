@@ -47,7 +47,7 @@ class Guylaine:
 
         # self.planetWeights = [1, 1, 1, 2, 1, 1, 1, 1, 1]
         # shipWeights = [1, 1, 1, 1, 1, 1, 1, 1, 1]
-        self.version = int(version)
+        self.version = version
         
     def predict(self, ship, game_map):
 
